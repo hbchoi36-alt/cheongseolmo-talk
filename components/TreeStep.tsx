@@ -1,38 +1,44 @@
-// Design Ref: DESIGN.md §3.5 ④ 생각나무 화면 — 왼쪽 약 60% 생각나무, 오른쪽 약 40% 상세 패널
-// 나무와 도토리는 PLAN 작업 6(ThoughtTree), 상세 패널은 작업 7(AcornDetail)에서 채운다.
+"use client";
+
+// Design Ref: DESIGN.md §3.5 ④ 생각나무 화면 — 왼쪽 시안 그림의 생각나무, 오른쪽 상세 패널
+// 제목·안내 띠는 배경 그림에 들어 있다. 상세 패널 내용은 PLAN 작업 7(AcornDetail)에서 채운다.
+import { useState } from "react";
+import type { ResultFile } from "@/lib/types";
 import StepPlaceholder from "./StepPlaceholder";
+import ThoughtTree from "./ThoughtTree";
 
-export default function TreeStep() {
+export default function TreeStep({ result }: { result: ResultFile | null }) {
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+
+  if (!result) {
+    return <StepPlaceholder title="④ 생각나무" plannedTask="결과를 불러온 뒤" />;
+  }
+
+  const selected = result.topics.find((topic) => topic.name === selectedName) ?? null;
+
   return (
-    <div className="flex flex-1 flex-col bg-sky/40">
-      <header className="flex flex-col items-center gap-1 pt-6">
-        <p className="rounded-xl bg-trunk px-8 py-1 font-display text-heading text-acorn-body shadow">청설모 TALK</p>
-        <p className="font-display text-heading text-ink">생각이 모여 자라는</p>
-        <h1 className="font-display text-title leading-none">
-          <span className="text-title-green">생각</span>
-          <span className="text-title-orange">나무</span>
-        </h1>
-        <p>
-          여러분의 소중한 의견이 더 좋은 변화를 만듭니다 <span className="text-heart">♥</span>
-        </p>
-      </header>
+    <div className="flex min-h-0 flex-1 bg-[#f7f3e3]">
+      <section className="flex min-h-0 w-3/5 flex-col items-center justify-center">
+        <div className="h-[calc(100vh-3rem)] min-h-0 max-w-full">
+          <ThoughtTree topics={result.topics} selectedName={selectedName} onSelect={setSelectedName} />
+        </div>
+      </section>
 
-      <div className="flex flex-1">
-        <section className="flex w-3/5 flex-col">
-          <StepPlaceholder title="생각나무" plannedTask="PLAN 작업 6" />
-        </section>
-        <aside className="flex w-2/5 flex-col p-6">
-          <div className="flex flex-1 rounded-3xl border-4 border-acorn-line bg-acorn-body">
-            <StepPlaceholder title="상세 패널" plannedTask="PLAN 작업 7" />
-          </div>
-        </aside>
-      </div>
-
-      <footer className="flex justify-center pb-4">
-        <p className="rounded-full border-2 border-acorn-line/40 bg-acorn-body px-8 py-2">
-          🌰 도토리가 클수록 더 많은 의견이 모인 주제예요!
+      <aside className="flex w-2/5 flex-col gap-4 p-6">
+        {/* 총 의견 수는 중복을 뺀 실제 의견 수 (DESIGN.md §3.5) */}
+        <p className="text-right">
+          의견 <strong className="font-display text-heading text-title-green">{result.opinions.length}</strong>건 · 주제{" "}
+          <strong className="font-display text-heading text-title-orange">{result.topics.length}</strong>개
+          <span className="block text-base text-ink/70">여러 주제에 걸친 의견은 주제마다 세어요</span>
         </p>
-      </footer>
+        <div className="flex flex-1 rounded-3xl border-4 border-acorn-line bg-acorn-body">
+          {selected ? (
+            <StepPlaceholder title={`🌰 ${selected.name} · ${selected.opinionIds.length}건`} plannedTask="PLAN 작업 7" />
+          ) : (
+            <StepPlaceholder title="도토리를 눌러 보세요 🌰" plannedTask="PLAN 작업 7" />
+          )}
+        </div>
+      </aside>
     </div>
   );
 }
