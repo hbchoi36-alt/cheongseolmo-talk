@@ -39,4 +39,7 @@
 body {
   background: var(--color-cream);
   color: var(--color-ink);
+  /* 한국어 문장은 어절(띄어쓰기) 단위로 줄을 바꾸고, 띄어쓰기 없이 아주 긴 글자만 칸 끝에서 끊는다 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }

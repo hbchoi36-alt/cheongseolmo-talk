@@ -35,8 +35,8 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
       <aside className="flex min-h-0 w-2/5 flex-col gap-4 p-6">
         {/* 총 의견 수는 중복을 뺀 실제 의견 수 (DESIGN.md §3.5) */}
         <p className="text-right">
-          의견 <strong className="font-display text-heading text-title-green">{result.opinions.length}</strong>건 · 주제{" "}
-          <strong className="font-display text-heading text-title-orange">{result.topics.length}</strong>개
+          의견 <strong className="font-display text-3xl text-title-green">{result.opinions.length}</strong>건 · 주제{" "}
+          <strong className="font-display text-3xl text-title-orange">{result.topics.length}</strong>개
           <span className="block text-base text-ink/70">여러 주제에 걸친 의견은 주제마다 세어요</span>
         </p>
         <div className="flex min-h-0 flex-1 flex-col rounded-3xl border-4 border-acorn-line bg-acorn-body shadow-lg">

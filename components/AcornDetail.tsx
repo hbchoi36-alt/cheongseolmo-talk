@@ -41,7 +41,7 @@ export default function AcornDetail({ result, topicIndex, onTopicChange }: Acorn
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex items-start justify-between gap-4 border-b-2 border-acorn-line/20 px-6 pb-4 pt-6">
-        <h2 className="font-display text-heading leading-tight text-acorn-line">
+        <h2 className="whitespace-nowrap font-display text-[1.75rem] leading-tight text-acorn-line">
           🌰 {topic.name} <span className="text-title-orange">· {topic.opinionIds.length}건</span>
         </h2>
         <button
@@ -55,41 +55,41 @@ export default function AcornDetail({ result, topicIndex, onTopicChange }: Acorn
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
         <section>
-          <h3 className="mb-1 font-display text-acorn-cap">요약</h3>
-          <p className="leading-relaxed">{topic.summary}</p>
+          <h3 className="mb-1 font-display text-xl text-acorn-cap">요약</h3>
+          <p className="text-xl leading-relaxed">{topic.summary}</p>
         </section>
 
         <section>
-          <h3 className="mb-2 font-display text-acorn-cap">💬 토론 질문</h3>
+          <h3 className="mb-2 font-display text-xl text-acorn-cap">💬 토론 질문</h3>
           {topic.discussionQuestions.length > 0 ? (
             <ol className="flex flex-col gap-2">
               {topic.discussionQuestions.map((question, i) => (
-                <li key={i} className="flex gap-3 rounded-2xl bg-white/70 px-4 py-3 leading-snug">
+                <li key={i} className="flex gap-3 rounded-2xl bg-white/70 px-4 py-3 text-xl leading-snug">
                   <span className="font-display text-title-green">{i + 1}.</span>
                   <span>{question}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="text-ink/60">토론 질문이 없어요.</p>
+            <p className="text-xl text-ink/60">토론 질문이 없어요.</p>
           )}
         </section>
 
         <section>
-          <h3 className="mb-2 font-display text-acorn-cap">📝 의견 ({topic.opinionIds.length})</h3>
+          <h3 className="mb-2 font-display text-xl text-acorn-cap">📝 의견 ({topic.opinionIds.length})</h3>
           <ul className="flex flex-col gap-3">
             {topic.opinionIds.map((id) => {
               const opinion = opinionsById.get(id);
               if (!opinion) return null;
               const others = otherTopicsOf(id);
               return (
-                <li key={id} className="border-l-4 border-leaf/60 pl-4 text-xl leading-relaxed">
+                <li key={id} className="border-l-4 border-leaf/60 pl-4 text-lg leading-relaxed">
                   {opinion.softened && (
-                    <span className="mr-2 rounded-full bg-sky px-2 py-0.5 text-base text-ink/80">순화됨</span>
+                    <span className="mr-2 rounded-full bg-sky px-2 py-0.5 text-sm text-ink/80">순화됨</span>
                   )}
                   {opinion.displayText}
                   {others.length > 0 && (
-                    <span className="mt-1 block text-base text-ink/60">다른 주제에도 포함: {others.join(", ")}</span>
+                    <span className="mt-1 block text-sm text-ink/60">다른 주제에도 포함: {others.join(", ")}</span>
                   )}
                 </li>
               );

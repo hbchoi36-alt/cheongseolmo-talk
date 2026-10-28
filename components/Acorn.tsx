@@ -26,8 +26,8 @@ function breakableName(name: string) {
 }
 
 export default function Acorn({ name, count, width, selected, onSelect }: AcornProps) {
-  // 도토리 크기에 맞춰 글자 크기도 바꾸되, 작은 도토리도 스크린에서 읽히도록 20px 아래로는 줄이지 않는다
-  const fontSize = Math.min(34, Math.max(20, width * 0.17));
+  // 글자는 도토리 너비에 맞춰 정해, 이름(두 줄)과 건수가 몸통(크림색) 안에만 들어가게 한다
+  const fontSize = Math.min(30, Math.max(14, width * 0.12));
 
   return (
     <button
@@ -62,9 +62,9 @@ export default function Acorn({ name, count, width, selected, onSelect }: AcornP
         <path d="M20 24 Q30 20 40 22" fill="none" stroke="#a8754a" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
       </svg>
 
-      {/* 주제 이름과 건수 — 몸통 영역 안에 놓는다 */}
+      {/* 주제 이름과 건수 — 모자(갈색) 아래, 몸통이 좁아지기 전까지의 영역에만 놓는다 (SVG 기준 y 52~108) */}
       <span
-        className="absolute inset-x-[14%] top-[42%] bottom-[16%] flex flex-col items-center justify-center text-center font-display leading-tight text-ink"
+        className="absolute inset-x-[15%] top-[41%] bottom-[17%] flex flex-col items-center justify-center overflow-hidden text-center font-display leading-tight text-ink"
         style={{ fontSize, wordBreak: "keep-all" }}
       >
         <span>{breakableName(name)}</span>
