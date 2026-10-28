@@ -8,6 +8,8 @@ export const RULES = {
   maxTopics: 8,
   maxSummaryLength: 100,
   maxQuestionsPerTopic: 3,
+  maxTopicNameLength: 10, // 도토리 안에 큰 글자로 들어가도록 (DESIGN.md §3.5)
+  maxOpinionsPerRequest: 300, // 분석 요청 1번에 보내는 최대 의견 수 (DESIGN.md §4.3)
   otherTopicName: "기타",
   nameMask: "●●",
 } as const;
@@ -31,9 +33,9 @@ export const analyzeRequestSchema = z.object({
 // ④ Claude가 돌려주는 분석 결과 — 원문은 들어 있지 않음
 
 export const topicSchema = z.object({
-  name: z.string().min(1), // 주제 이름 (예: "인사제도", "기타")
+  name: z.string().min(1), // 주제 이름, 10자 이내 (예: "인사제도", "기타")
   summary: z.string(), // 주제마다 1개, 100자 이내
-  questions: z.array(z.string()), // 토론 질문, 최대 3개
+  discussionQuestions: z.array(z.string()), // 토론 질문, 최대 3개
   opinionIds: z.array(opinionId), // 이 주제에 속한 의견 번호 (여러 주제 중복 허용)
 });
 
@@ -77,7 +79,7 @@ export type ResultFile = z.infer<typeof resultFileSchema>;
 
 export const API_ERROR_CODES = [
   "INVALID_INPUT", // 의견이 비었거나 형식이 틀림 (400)
-  "AI_RULE_VIOLATION", // 재요청 후에도 규칙 위반·누락 (502)
+  "AI_RULE_VIOLATION", // AI 결과가 검증 규칙에 맞지 않음 (502) — 재요청은 브라우저가 함
   "AI_UNAVAILABLE", // Claude 응답 없음·시간 초과·요청 한도 (503)
   "SERVER_CONFIG", // API 키 미설정 (500)
 ] as const;

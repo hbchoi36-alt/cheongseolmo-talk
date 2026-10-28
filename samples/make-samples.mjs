@@ -1,4 +1,4 @@
-// PLAN 작업 2 — 비식별 예시 설문 파일 3종을 만든다.
+// PLAN 작업 2 — 비식별 예시 설문 파일 4종을 만든다.
 // 문항은 운영자가 준 '청설모 간담회 사전 설문조사' 양식을 따르고, 응답 30건은 모두 지어낸 내용이다.
 // 사람 이름도 실존 인물이 아닌 가상의 이름이다.
 // 실행: node samples/make-samples.mjs
@@ -92,6 +92,9 @@ const csv = toCsv(table);
 // 1) 구글폼에서 바로 내려받은 CSV (UTF-8)
 writeFileSync(new URL("opinions-utf8.csv", OUT_DIR), csv, "utf8");
 
+// 1-1) 맨 앞에 BOM이 붙은 UTF-8 CSV (메모장·일부 프로그램 저장 형식, BOM 처리 확인용)
+writeFileSync(new URL("opinions-utf8-bom.csv", OUT_DIR), "﻿" + csv, "utf8");
+
 // 2) 엑셀에서 다시 저장해 한글 인코딩이 바뀐 CSV (CP949)
 writeFileSync(new URL("opinions-cp949.csv", OUT_DIR), iconv.encode(csv, "cp949"));
 
@@ -100,4 +103,4 @@ await writeExcelFile(table, { sheet: "설문지 응답 시트1" }).toFile(
   new URL("opinions.xlsx", OUT_DIR).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
 );
 
-console.log(`예시 파일 3종 생성 완료: 응답 ${ROWS.length}건`);
+console.log(`예시 파일 4종 생성 완료: 응답 ${ROWS.length}건`);

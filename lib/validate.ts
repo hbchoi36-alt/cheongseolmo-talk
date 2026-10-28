@@ -9,7 +9,8 @@ export type RuleCode =
   | "TOO_MANY_TOPICS" // 주제가 기타 포함 8개를 넘음
   | "SUMMARY_TOO_LONG" // 요약이 100자를 넘음
   | "TOO_MANY_QUESTIONS" // 토론 질문이 3개를 넘음
-  // 도토리 건수·크기가 틀리게 나오는 것을 막는 기본 검사
+  // 도토리 건수·크기가 틀리게 나오는 것을 막는 기본 검사 (DESIGN.md §4.2)
+  | "TOPIC_NAME_TOO_LONG" // 주제 이름이 10자를 넘어 도토리 안에 들어가지 않음
   | "UNKNOWN_OPINION_ID" // 보내지 않은 의견 번호가 들어 있음
   | "DUPLICATE_IN_TOPIC" // 한 주제 안에 같은 번호가 두 번 이상 들어 있음 (건수 부풀림)
   | "EMPTY_TOPIC" // 의견이 0건인 주제 (크기 0 도토리)
@@ -56,6 +57,15 @@ export function validateTopics(topics: readonly Topic[], allOpinionIds: readonly
     }
     seenNames.add(name);
 
+    const nameLength = charLength(name);
+    if (nameLength > RULES.maxTopicNameLength) {
+      violations.push({
+        rule: "TOPIC_NAME_TOO_LONG",
+        topicName: name,
+        message: `'${name}' 주제 이름이 ${nameLength}자예요. ${RULES.maxTopicNameLength}자 이내여야 해요.`,
+      });
+    }
+
     if (topic.summary.trim() === "") {
       violations.push({ rule: "EMPTY_SUMMARY", topicName: name, message: `'${name}' 주제의 요약이 비어 있어요.` });
     }
@@ -69,11 +79,11 @@ export function validateTopics(topics: readonly Topic[], allOpinionIds: readonly
       });
     }
 
-    if (topic.questions.length > RULES.maxQuestionsPerTopic) {
+    if (topic.discussionQuestions.length > RULES.maxQuestionsPerTopic) {
       violations.push({
         rule: "TOO_MANY_QUESTIONS",
         topicName: name,
-        message: `'${name}' 주제의 토론 질문이 ${topic.questions.length}개예요. 최대 ${RULES.maxQuestionsPerTopic}개까지예요.`,
+        message: `'${name}' 주제의 토론 질문이 ${topic.discussionQuestions.length}개예요. 최대 ${RULES.maxQuestionsPerTopic}개까지예요.`,
       });
     }
 
