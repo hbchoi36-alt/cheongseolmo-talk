@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 삭제 대기 파일은 검사하지 않음
+    "trash-can/**",
   ]),
 ]);
 
