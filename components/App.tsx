@@ -38,6 +38,14 @@ export default function App() {
     setStep("tree");
   }
 
+  // 결과 파일을 불러오면 AI 호출 없이 바로 생각나무를 띄운다 (PLAN 작업 8)
+  function loadResult(loaded: ResultFile) {
+    setResult(loaded);
+    setHasUnsavedChanges(false);
+    setPreviewTopicCount(null);
+    setStep("tree");
+  }
+
   function changeTopic(topicIndex: number, topic: Topic) {
     setResult((current) =>
       current ? { ...current, topics: current.topics.map((t, i) => (i === topicIndex ? topic : t)) } : current,
@@ -51,7 +59,7 @@ export default function App() {
   return (
     <div className="flex h-screen flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
-        {step === "start" && <StartStep />}
+        {step === "start" && <StartStep onResultLoaded={loadResult} />}
         {step === "column" && <ColumnStep />}
         {step === "analyzing" && <AnalyzingStep />}
         {step === "tree" && <TreeStep key={previewTopicCount ?? "all"} result={shownResult} onTopicChange={changeTopic} />}
