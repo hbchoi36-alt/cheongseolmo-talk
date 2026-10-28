@@ -3,6 +3,7 @@
 // Design Ref: DESIGN.md §3.1 화면 흐름 — 한 페이지 안에서 4단계 화면을 바꿔 보여준다 (주소는 그대로)
 // 단계마다 필요한 데이터(올린 파일, 분석 결과 등)는 이후 작업에서 각 단계에 붙인다.
 import { useEffect, useState } from "react";
+import type { SurveyFileKind } from "@/lib/surveyFile";
 import { resultFileSchema, type ResultFile, type Topic } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
 import AnalyzingStep from "./AnalyzingStep";
@@ -26,6 +27,8 @@ const LEAVE_WARNING = "결과 파일을 내려받지 않았어요. 나가면 다
 
 export default function App() {
   const [step, setStep] = useState<StepName>("start");
+  // 시작 화면에서 고른 설문 파일 — 내용은 PLAN 작업 11·12에서 읽는다
+  const [survey, setSurvey] = useState<{ file: File; kind: SurveyFileKind } | null>(null);
   const [result, setResult] = useState<ResultFile | null>(null);
   // 고친 결과를 아직 내려받지 않았는지 — 나가기 전 확인 창(PLAN 작업 9)에 쓴다
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -59,6 +62,11 @@ export default function App() {
     setStep("start");
   }
 
+  function selectSurvey(file: File, kind: SurveyFileKind) {
+    setSurvey({ file, kind });
+    setStep("column");
+  }
+
   // 결과 파일을 불러오면 AI 호출 없이 바로 생각나무를 띄운다 (PLAN 작업 8)
   function loadResult(loaded: ResultFile) {
     setResult(loaded);
@@ -80,8 +88,8 @@ export default function App() {
   return (
     <div className="flex h-screen flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
-        {step === "start" && <StartStep onResultLoaded={loadResult} />}
-        {step === "column" && <ColumnStep />}
+        {step === "start" && <StartStep onSurveySelected={selectSurvey} onResultLoaded={loadResult} />}
+        {step === "column" && <ColumnStep fileName={survey?.file.name ?? null} onBack={() => setStep("start")} />}
         {step === "analyzing" && <AnalyzingStep />}
         {step === "tree" && <TreeStep
             key={previewTopicCount ?? "all"}

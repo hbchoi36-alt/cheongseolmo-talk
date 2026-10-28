@@ -77,14 +77,15 @@ export function LoadResultButton({ onLoaded }: { onLoaded: (result: ResultFile, 
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex w-[26rem] max-w-full flex-col items-center gap-3">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex flex-col items-center gap-1 rounded-3xl border-4 border-acorn-line bg-acorn-body px-10 py-6 shadow-md transition hover:-translate-y-0.5 hover:bg-white"
+        className="flex w-full flex-col items-center gap-1 rounded-3xl border-4 border-acorn-line bg-acorn-body px-8 py-6 shadow-md transition hover:-translate-y-0.5 hover:bg-white"
       >
-        <span className="font-display text-heading text-acorn-line">🌳 저장한 결과 파일 불러오기</span>
+        <span className="whitespace-nowrap font-display text-3xl text-acorn-line">🌳 저장한 결과 파일 불러오기</span>
         <span className="text-xl text-ink/70">.json</span>
+        <span className="text-base text-ink/50">AI 분석 없이 바로 생각나무를 띄워요</span>
       </button>
       <input
         ref={inputRef}
@@ -99,7 +100,7 @@ export function LoadResultButton({ onLoaded }: { onLoaded: (result: ResultFile, 
         }}
       />
       {error && (
-        <p role="alert" className="max-w-xl rounded-2xl bg-heart/10 px-5 py-3 text-center text-xl text-heart">
+        <p role="alert" className="rounded-2xl bg-heart/10 px-5 py-3 text-center text-xl text-heart">
           {error}
         </p>
       )}
