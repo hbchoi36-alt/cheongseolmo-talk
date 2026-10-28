@@ -1,0 +1,3 @@
+# 예시 설문 파일은 바이트 그대로 보관한다 (BOM·CRLF·CP949 인코딩을 검증하는 파일이라 줄바꿈 변환 금지)
+samples/*.csv -text
+samples/*.xlsx binary
