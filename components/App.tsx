@@ -3,6 +3,8 @@
 // Design Ref: DESIGN.md §3.1 화면 흐름 — 한 페이지 안에서 4단계 화면을 바꿔 보여준다 (주소는 그대로)
 // 단계마다 필요한 데이터(올린 파일, 분석 결과 등)는 이후 작업에서 각 단계에 붙인다.
 import { useEffect, useState } from "react";
+import { readCsvFile, type CsvEncoding } from "@/lib/parse/csv";
+import type { SurveyTable } from "@/lib/parse/table";
 import type { SurveyFileKind } from "@/lib/surveyFile";
 import { resultFileSchema, type ResultFile, type Topic } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
@@ -27,8 +29,8 @@ const LEAVE_WARNING = "결과 파일을 내려받지 않았어요. 나가면 다
 
 export default function App() {
   const [step, setStep] = useState<StepName>("start");
-  // 시작 화면에서 고른 설문 파일 — 내용은 PLAN 작업 11·12에서 읽는다
-  const [survey, setSurvey] = useState<{ file: File; kind: SurveyFileKind } | null>(null);
+  // 시작 화면에서 올려 읽어 들인 설문 파일 (브라우저 안에만 있다)
+  const [survey, setSurvey] = useState<{ fileName: string; table: SurveyTable; encoding?: CsvEncoding } | null>(null);
   const [result, setResult] = useState<ResultFile | null>(null);
   // 고친 결과를 아직 내려받지 않았는지 — 나가기 전 확인 창(PLAN 작업 9)에 쓴다
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -62,9 +64,18 @@ export default function App() {
     setStep("start");
   }
 
-  function selectSurvey(file: File, kind: SurveyFileKind) {
-    setSurvey({ file, kind });
-    setStep("column");
+  // Design Ref: DESIGN.md §4.1 ① — 파일을 읽어 표로 만든 뒤 의견 열 선택 화면으로 넘어간다. 읽지 못하면 시작 화면에 이유를 보여 준다.
+  async function selectSurvey(file: File, kind: SurveyFileKind): Promise<string | null> {
+    if (kind === "xlsx") return "엑셀(.xlsx) 읽기는 곧 추가돼요 (PLAN 작업 12). 지금은 CSV 파일을 올려 주세요.";
+    try {
+      const read = await readCsvFile(file);
+      if (!read.ok) return `파일을 읽지 못했어요 — ${read.reason} 엑셀에서 다시 저장해 보세요.`;
+      setSurvey({ fileName: file.name, table: read.table, encoding: read.table.encoding });
+      setStep("column");
+      return null;
+    } catch {
+      return "파일을 읽지 못했어요. 엑셀에서 다시 저장해 보세요.";
+    }
   }
 
   // 결과 파일을 불러오면 AI 호출 없이 바로 생각나무를 띄운다 (PLAN 작업 8)
@@ -89,7 +100,7 @@ export default function App() {
     <div className="flex h-screen flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
         {step === "start" && <StartStep onSurveySelected={selectSurvey} onResultLoaded={loadResult} />}
-        {step === "column" && <ColumnStep fileName={survey?.file.name ?? null} onBack={() => setStep("start")} />}
+        {step === "column" && <ColumnStep survey={survey} onBack={() => setStep("start")} />}
         {step === "analyzing" && <AnalyzingStep />}
         {step === "tree" && <TreeStep
             key={previewTopicCount ?? "all"}

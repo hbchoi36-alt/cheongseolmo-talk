@@ -6,7 +6,8 @@ import SquirrelSticker from "./SquirrelSticker";
 import SurveyUploadButton from "./SurveyUploadButton";
 
 interface StartStepProps {
-  onSurveySelected: (file: File, kind: SurveyFileKind) => void;
+  /** 파일을 읽어 보고, 읽지 못하면 이유를 돌려준다 */
+  onSurveySelected: (file: File, kind: SurveyFileKind) => Promise<string | null>;
   onResultLoaded: (result: ResultFile, fileName: string) => void;
 }
 
