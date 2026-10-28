@@ -12,6 +12,7 @@ import { DownloadResultButton } from "./ResultFileButtons";
 import SquirrelSticker from "./SquirrelSticker";
 import StepPlaceholder from "./StepPlaceholder";
 import ThoughtTree from "./ThoughtTree";
+import VillageMap from "./VillageMap";
 
 // 양옆 여백 글자 크기: 최소값, 화면 높이 비율, 최대값 (1080px 화면에서 최대값에 닿는다)
 const BIG_NUMBER = "clamp(3rem, 10vh, 7rem)";
@@ -33,6 +34,8 @@ interface TreeStepProps {
 export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onDownloaded, onGoHome }: TreeStepProps) {
   // 이름을 고쳐도 같은 주제가 열린 채로 남도록 이름 대신 순서 번호로 기억한다
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // 생각나무를 처음 열면 청설모 마을 지도부터 보여 준다 (간담회 시작 전 아이스브레이킹)
+  const [showMap, setShowMap] = useState(true);
 
   if (!result) {
     return <StepPlaceholder title="④ 생각나무" plannedTask="결과를 불러온 뒤" />;
@@ -45,6 +48,13 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
     <div className="relative flex min-h-0 flex-1 bg-[#f7f3e3]">
       {/* 운영자용 버튼 — 화면 구석에 작게 둔다 */}
       <div className="absolute right-6 top-4 z-10 flex items-start gap-2">
+        <button
+          type="button"
+          onClick={() => setShowMap(true)}
+          className="rounded-full border-2 border-acorn-line/30 bg-acorn-body px-5 py-1.5 text-base hover:bg-white"
+        >
+          🗺 마을 지도
+        </button>
         <DownloadResultButton result={result} hasUnsavedChanges={hasUnsavedChanges} onDownloaded={onDownloaded} />
         <button
           type="button"
@@ -111,6 +121,8 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
           <SquirrelSticker pose="waving" width="min(200px, 20vh)" />
         </div>
       </aside>
+
+      {showMap && <VillageMap onClose={() => setShowMap(false)} />}
 
       {/* 도토리 상세 — 전체 화면 */}
       {open !== null && (
