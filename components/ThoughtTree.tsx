@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useLayoutEffect, useRef, useState } from "react";
 import { acornWidths } from "@/lib/acornSize";
-import type { Topic } from "@/lib/types";
+import { RULES, type Topic } from "@/lib/types";
 import Acorn from "./Acorn";
 
 // 배경 그림 원본 크기 (public/thought-tree-bg.webp)
@@ -23,17 +23,23 @@ const SLOTS_UP_TO_5: Slot[] = [
   { x: 0.665, y: 0.64 },
 ];
 
-// 주제 6~8개: 위아래 두 줄에 4개씩, 가운데부터 채운다
-const SLOTS_UP_TO_8: Slot[] = [
+// 주제 6~7개: 위 4곳, 아래 3곳. 오른쪽 아래 표지판 앞은 비워 둔다.
+const SLOTS_UP_TO_7: Slot[] = [
   { x: 0.38, y: 0.42 },
   { x: 0.62, y: 0.42 },
-  { x: 0.38, y: 0.62 },
-  { x: 0.62, y: 0.62 },
+  { x: 0.455, y: 0.635 },
   { x: 0.14, y: 0.43 },
   { x: 0.86, y: 0.45 },
-  { x: 0.14, y: 0.62 },
-  { x: 0.86, y: 0.61 },
+  { x: 0.215, y: 0.635 },
+  { x: 0.69, y: 0.635 },
 ];
+
+/** 의견이 많은 주제부터 앞 자리에 놓되, '기타'는 의견 수와 상관없이 마지막 자리에 둔다 */
+function orderForSlots(topics: readonly Topic[]): Topic[] {
+  const byCount = [...topics].sort((a, b) => b.opinionIds.length - a.opinionIds.length);
+  const others = byCount.filter((topic) => topic.name === RULES.otherTopicName);
+  return [...byCount.filter((topic) => topic.name !== RULES.otherTopicName), ...others];
+}
 
 interface ThoughtTreeProps {
   topics: readonly Topic[];
@@ -56,9 +62,8 @@ export default function ThoughtTree({ topics, selectedName, onSelect }: ThoughtT
     return () => observer.disconnect();
   }, []);
 
-  // 의견이 많은 주제부터 앞 자리에 놓는다
-  const ordered = [...topics].sort((a, b) => b.opinionIds.length - a.opinionIds.length);
-  const slots = ordered.length <= SLOTS_UP_TO_5.length ? SLOTS_UP_TO_5 : SLOTS_UP_TO_8;
+  const ordered = orderForSlots(topics);
+  const slots = ordered.length <= SLOTS_UP_TO_5.length ? SLOTS_UP_TO_5 : SLOTS_UP_TO_7;
   const widths = acornWidths(ordered.map((topic) => topic.opinionIds.length));
 
   return (

@@ -6,7 +6,7 @@ import { RULES, type AiAnalysis, type OpinionInput, type ResultFile, type Topic 
 export type RuleCode =
   // PRD §5 AI 규칙
   | "MISSING_OPINIONS" // 어느 주제에도 속하지 않은 의견이 있음 (누락 0건 위반)
-  | "TOO_MANY_TOPICS" // 주제가 기타 포함 8개를 넘음
+  | "TOO_MANY_TOPICS" // 주제가 기타 포함 7개를 넘음
   | "SUMMARY_TOO_LONG" // 요약이 100자를 넘음
   | "TOO_MANY_QUESTIONS" // 토론 질문이 3개를 넘음
   // 도토리 건수·크기가 틀리게 나오는 것을 막는 기본 검사 (DESIGN.md §4.2)

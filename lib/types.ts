@@ -5,7 +5,7 @@ import { z } from "zod";
 
 /** PRD §5의 AI 규칙 수치. 검증 함수와 분석 지시문이 같은 값을 쓰도록 한 곳에 모아 둔다. */
 export const RULES = {
-  maxTopics: 8,
+  maxTopics: 7, // '기타' 포함. 넘으면 의견 수가 적은 주제부터 '기타'로 합친다 (PRD §5)
   maxSummaryLength: 100,
   maxQuestionsPerTopic: 3,
   maxTopicNameLength: 10, // 도토리 안에 큰 글자로 들어가도록 (DESIGN.md §3.5)
@@ -46,7 +46,7 @@ export const opinionFlagSchema = z.object({
 });
 
 export const aiAnalysisSchema = z.object({
-  topics: z.array(topicSchema), // 기타 포함 최대 8개
+  topics: z.array(topicSchema), // 기타 포함 최대 7개
   flags: z.array(opinionFlagSchema), // 이름·욕설이 있는 의견만
 });
 

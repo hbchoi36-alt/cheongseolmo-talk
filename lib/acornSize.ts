@@ -5,7 +5,7 @@
 function maxWidthFor(topicCount: number): number {
   if (topicCount <= 4) return 0.26;
   if (topicCount <= 6) return 0.23;
-  return 0.2;
+  return 0.21;
 }
 
 /** 주제 이름이 읽히도록 가장 작은 도토리도 이 너비보다 작게 만들지 않는다 */
