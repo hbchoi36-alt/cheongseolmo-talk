@@ -31,7 +31,7 @@ export interface ValidationResult {
 }
 
 /** 글자 수는 화면에 보이는 글자 단위로 센다 (이모지 등이 2글자로 세지지 않게) */
-function charLength(text: string): number {
+export function charLength(text: string): number {
   return [...text].length;
 }
 

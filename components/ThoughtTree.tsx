@@ -35,19 +35,22 @@ const SLOTS_UP_TO_7: Slot[] = [
 ];
 
 /** 의견이 많은 주제부터 앞 자리에 놓되, '기타'는 의견 수와 상관없이 마지막 자리에 둔다 */
-function orderForSlots(topics: readonly Topic[]): Topic[] {
-  const byCount = [...topics].sort((a, b) => b.opinionIds.length - a.opinionIds.length);
-  const others = byCount.filter((topic) => topic.name === RULES.otherTopicName);
-  return [...byCount.filter((topic) => topic.name !== RULES.otherTopicName), ...others];
+type IndexedTopic = { topic: Topic; index: number };
+
+function orderForSlots(topics: IndexedTopic[]): IndexedTopic[] {
+  const byCount = [...topics].sort((a, b) => b.topic.opinionIds.length - a.topic.opinionIds.length);
+  const isOther = ({ topic }: IndexedTopic) => topic.name === RULES.otherTopicName;
+  return [...byCount.filter((t) => !isOther(t)), ...byCount.filter(isOther)];
 }
 
 interface ThoughtTreeProps {
   topics: readonly Topic[];
-  selectedName: string | null;
-  onSelect: (topicName: string) => void;
+  /** 선택된 주제의 순서 번호 (결과의 topics 배열 기준) */
+  selectedIndex: number | null;
+  onSelect: (topicIndex: number) => void;
 }
 
-export default function ThoughtTree({ topics, selectedName, onSelect }: ThoughtTreeProps) {
+export default function ThoughtTree({ topics, selectedIndex, onSelect }: ThoughtTreeProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [frameWidth, setFrameWidth] = useState(0);
 
@@ -62,9 +65,9 @@ export default function ThoughtTree({ topics, selectedName, onSelect }: ThoughtT
     return () => observer.disconnect();
   }, []);
 
-  const ordered = orderForSlots(topics);
+  const ordered = orderForSlots(topics.map((topic, index) => ({ topic, index })));
   const slots = ordered.length <= SLOTS_UP_TO_5.length ? SLOTS_UP_TO_5 : SLOTS_UP_TO_7;
-  const widths = acornWidths(ordered.map((topic) => topic.opinionIds.length));
+  const widths = acornWidths(ordered.map(({ topic }) => topic.opinionIds.length));
 
   return (
     <div
@@ -83,12 +86,12 @@ export default function ThoughtTree({ topics, selectedName, onSelect }: ThoughtT
       />
 
       {frameWidth > 0 &&
-        ordered.map((topic, i) => {
+        ordered.map(({ topic, index }, i) => {
           const slot = slots[i];
           const width = widths[i] * frameWidth;
           return (
             <div
-              key={topic.name}
+              key={index}
               className="absolute -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${slot.x * 100}%`, top: `${slot.y * 100}%` }}
             >
@@ -96,8 +99,8 @@ export default function ThoughtTree({ topics, selectedName, onSelect }: ThoughtT
                 name={topic.name}
                 count={topic.opinionIds.length}
                 width={width}
-                selected={selectedName === topic.name}
-                onSelect={() => onSelect(topic.name)}
+                selected={selectedIndex === index}
+                onSelect={() => onSelect(index)}
               />
             </div>
           );
