@@ -17,46 +17,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import iconv from "iconv-lite";
 import writeExcelFile from "write-excel-file/node";
+import { parseCsv, toCsv } from "./csv-utils.mjs";
 
 const OUT_DIR = new URL("./", import.meta.url);
 const SOURCE = new URL("googleform-export.csv", OUT_DIR);
-
-// 따옴표 안의 쉼표·줄바꿈·"" 를 처리하는 작은 CSV 해석기 (예시 파일 생성 전용)
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (quoted) {
-      if (ch === '"' && text[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') quoted = false;
-      else field += ch;
-    } else if (ch === '"') quoted = true;
-    else if (ch === ",") {
-      row.push(field);
-      field = "";
-    } else if (ch === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else if (ch !== "\r") field += ch;
-  }
-  if (field !== "" || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows;
-}
-
-// 구글폼처럼 모든 칸을 따옴표로 감싸고 CRLF로 줄을 나눈다
-function toCsv(rows) {
-  return rows.map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(",")).join("\r\n") + "\r\n";
-}
 
 const sourceText = new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(SOURCE)); // BOM은 자동으로 빠진다
 const table = parseCsv(sourceText);
