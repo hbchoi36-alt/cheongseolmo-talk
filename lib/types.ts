@@ -61,7 +61,7 @@ export const displayOpinionSchema = z.object({
 
 export const resultFileSchema = z.object({
   version: z.literal(RESULT_FILE_VERSION),
-  createdAt: z.iso.datetime(), // 분석 시각 (ISO 형식)
+  createdAt: z.iso.datetime({ offset: true }), // 분석 시각 (ISO 형식, "Z"와 "+09:00" 모두 허용)
   sourceFileName: z.string(), // 원본 설문 파일 이름
   opinions: z.array(displayOpinionSchema),
   topics: z.array(topicSchema),
