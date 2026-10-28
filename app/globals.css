@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Design Ref: DESIGN.md §3.7 디자인 기준 — 운영자 시안(design/thought-tree-mockup.webp)에서 뽑은 색·글꼴·글자 크기.
+   회의실 스크린 한 가지 환경만 쓰므로 어두운 모드는 두지 않는다. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* 배경 */
+  --color-cream: #fbf6e9;
+  --color-sky: #d6eaf5;
+  --color-grass: #8cc152;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* 나무 */
+  --color-leaf: #6fae45;
+  --color-leaf-dark: #3f7d2c;
+  --color-trunk: #8b5a2b;
+
+  /* 도토리 */
+  --color-acorn-cap: #8a5a33;
+  --color-acorn-body: #fff4de;
+  --color-acorn-line: #5c3a1e;
+  --color-ring-gold: #d9a441;
+
+  /* 글자 */
+  --color-title-green: #3f8a2f;
+  --color-title-orange: #d9822b;
+  --color-ink: #4a3020;
+  --color-heart: #e85a5a;
+
+  /* 글꼴: 제목·도토리는 둥근 Jua, 본문·의견 목록은 읽기 쉬운 Noto Sans KR */
+  --font-display: var(--font-jua);
+  --font-sans: var(--font-noto-sans-kr);
+
+  /* 스크린 기준 글자 크기: 본문 최소 24px, 도토리 안 주제명 최소 28px, 제목 64px 이상 */
+  --text-body: 1.5rem;
+  --text-acorn: 1.75rem;
+  --text-heading: 2.5rem;
+  --text-title: 4rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
 }
