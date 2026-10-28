@@ -7,7 +7,7 @@ import { readCsvFile, type CsvEncoding } from "@/lib/parse/csv";
 import type { SurveyTable } from "@/lib/parse/table";
 import { readXlsxFile } from "@/lib/parse/xlsx";
 import type { SurveyFileKind } from "@/lib/surveyFile";
-import { resultFileSchema, type ResultFile, type Topic } from "@/lib/types";
+import { resultFileSchema, type OpinionInput, type ResultFile, type Topic } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
 import AnalyzingStep from "./AnalyzingStep";
 import ColumnStep from "./ColumnStep";
@@ -40,6 +40,8 @@ export default function App() {
   // 시작 화면에서 올려 읽어 들인 설문 파일 (브라우저 안에만 있다)
   // CSV는 표 1개, 엑셀은 응답이 있는 시트마다 표 1개
   const [survey, setSurvey] = useState<Survey | null>(null);
+  // [분석 시작]으로 넘어온 의견 — AI 분석(PLAN 작업 14~)이 이 목록을 보낸다
+  const [pending, setPending] = useState<{ opinions: OpinionInput[]; sourceFileName: string } | null>(null);
   const [result, setResult] = useState<ResultFile | null>(null);
   // 고친 결과를 아직 내려받지 않았는지 — 나가기 전 확인 창(PLAN 작업 9)에 쓴다
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -114,8 +116,19 @@ export default function App() {
     <div className="flex h-screen flex-col">
       <main className="flex min-h-0 flex-1 flex-col">
         {step === "start" && <StartStep onSurveySelected={selectSurvey} onResultLoaded={loadResult} />}
-        {step === "column" && <ColumnStep survey={survey} onBack={() => setStep("start")} />}
-        {step === "analyzing" && <AnalyzingStep />}
+        {step === "column" && (
+          <ColumnStep
+            survey={survey}
+            onBack={() => setStep("start")}
+            onStart={(opinions, sourceFileName) => {
+              setPending({ opinions, sourceFileName });
+              setStep("analyzing");
+            }}
+          />
+        )}
+        {step === "analyzing" && (
+          <AnalyzingStep opinionCount={pending?.opinions.length ?? null} onBack={() => setStep(survey ? "column" : "start")} />
+        )}
         {step === "tree" && <TreeStep
             key={previewTopicCount ?? "all"}
             result={shownResult}
