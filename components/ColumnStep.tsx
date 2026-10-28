@@ -1,14 +1,19 @@
+"use client";
+
 // Design Ref: DESIGN.md §3.3 ② 의견 열 선택 화면
-// 지금은 읽어 들인 표의 정보(열 이름, 응답 수, 인코딩)를 보여 준다. 열을 고르고 유효 의견 수·미리보기를 보여 주는 일은 PLAN 작업 13에서 채운다.
-import type { CsvEncoding } from "@/lib/parse/csv";
-import type { SurveyTable } from "@/lib/parse/table";
+// 지금은 읽어 들인 표의 정보(시트, 열 이름, 응답 수, 인코딩)를 보여 준다. 열을 고르고 유효 의견 수·미리보기를 보여 주는 일은 PLAN 작업 13에서 채운다.
+import { useState } from "react";
+import type { Survey } from "./App";
 
 interface ColumnStepProps {
-  survey: { fileName: string; table: SurveyTable; encoding?: CsvEncoding } | null;
+  survey: Survey | null;
   onBack: () => void;
 }
 
 export default function ColumnStep({ survey, onBack }: ColumnStepProps) {
+  const [sheetIndex, setSheetIndex] = useState(0);
+  const table = survey?.tables[sheetIndex];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-8 py-6">
       <header className="flex items-center gap-6">
@@ -22,14 +27,32 @@ export default function ColumnStep({ survey, onBack }: ColumnStepProps) {
         {survey && <p className="font-display text-2xl text-acorn-line">📄 {survey.fileName}</p>}
       </header>
 
-      {survey && (
+      {survey && table && (
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-3xl border-4 border-acorn-line bg-acorn-body px-8 py-6">
+          {/* 시트가 2개 이상일 때만 고르게 한다 (DESIGN.md §12) */}
+          {survey.tables.length > 1 && (
+            <label className="flex items-center gap-3 text-xl">
+              시트:
+              <select
+                value={sheetIndex}
+                onChange={(e) => setSheetIndex(Number(e.target.value))}
+                className="rounded-xl border-2 border-acorn-line/40 bg-white px-3 py-1"
+              >
+                {survey.tables.map((t, i) => (
+                  <option key={i} value={i}>
+                    {t.sheetName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <p className="text-xl">
-            열 <strong>{survey.table.headers.length}</strong>개 · 응답 <strong>{survey.table.rows.length}</strong>줄
+            {table.sheetName && survey.tables.length === 1 && <span className="text-ink/60">시트 {table.sheetName} · </span>}
+            열 <strong>{table.headers.length}</strong>개 · 응답 <strong>{table.rows.length}</strong>줄
             {survey.encoding && <span className="text-ink/60"> · 한글 인코딩 {survey.encoding}</span>}
           </p>
           <ol className="flex flex-col gap-1 text-lg">
-            {survey.table.headers.map((header, i) => (
+            {table.headers.map((header, i) => (
               <li key={i} className="rounded-xl bg-white/70 px-4 py-2">
                 {i + 1}. {header}
               </li>

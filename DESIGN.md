@@ -449,7 +449,7 @@ interface ResultFile {
 | **@anthropic-ai/sdk** | Claude에게 질문을 보내고 답을 받는 공식 연결 도구. | 서버 분석 API | 작업 14에서 설치 |
 | **zod** | AI 답변이 정해진 모양(주제 이름, 요약, 번호 목록…)인지 자동으로 검사하는 도구. | 서버 응답 검사, 결과 파일 불러오기 | ✅ 설치됨 |
 | **papaparse** | 쉼표로 나뉜 CSV 파일을 표처럼 줄·칸으로 정확히 나눠 주는 도구. (따옴표·줄바꿈이 섞인 칸도 처리) | CSV 읽기 | ✅ 설치됨 |
-| **read-excel-file** | 엑셀(.xlsx) 파일을 브라우저에서 바로 읽어 표로 꺼내 주는 가벼운 도구. | xlsx 읽기 | 작업 12에서 설치 |
+| **read-excel-file** | 엑셀(.xlsx) 파일을 브라우저에서 바로 읽어 표로 꺼내 주는 가벼운 도구. | xlsx 읽기 | ✅ 설치됨 |
 | **server-only** | API 키를 쓰는 코드가 실수로 사용자 화면 쪽에 섞여 들어가면 빌드 단계에서 막아 주는 안전장치. | Claude 호출 모듈 | 작업 14에서 설치 |
 | **write-excel-file**, **iconv-lite** (개발용) | 예시 엑셀 파일을 만들고, 글자를 CP949로 바꿔 저장하는 도구. 예시 파일 만들 때만 쓰고 앱에는 들어가지 않는다. | `samples/make-samples.mjs` | ✅ 설치됨 |
 | **Vitest** (보류) | 검증 규칙을 버튼 한 번으로 반복 확인하는 자동 검사 도구. | — | 지금은 넣지 않음 |
@@ -500,7 +500,7 @@ my-app/
 │  ├─ acornSize.ts               # 건수 → 도토리 크기
 │  ├─ parse/table.ts             # CSV·엑셀을 같은 표 모양(열 이름 + 응답 줄)으로 정리 ✅
 │  ├─ parse/csv.ts               # CSV 읽기 + 인코딩 판별 ✅
-│  ├─ parse/xlsx.ts              # 엑셀 읽기
+│  ├─ parse/xlsx.ts              # 엑셀 읽기 (모든 시트, 응답 없는 시트는 뺌, 날짜·숫자는 글자로) ✅
 │  └─ server/                    # 서버 전용 (import "server-only")
 │     ├─ claude.ts               # Claude 호출 (요청 1번에 호출 1번)
 │     └─ prompt.ts               # 분석·병합 지시문

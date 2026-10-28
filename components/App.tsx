@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { readCsvFile, type CsvEncoding } from "@/lib/parse/csv";
 import type { SurveyTable } from "@/lib/parse/table";
+import { readXlsxFile } from "@/lib/parse/xlsx";
 import type { SurveyFileKind } from "@/lib/surveyFile";
 import { resultFileSchema, type ResultFile, type Topic } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
@@ -12,6 +13,13 @@ import AnalyzingStep from "./AnalyzingStep";
 import ColumnStep from "./ColumnStep";
 import StartStep from "./StartStep";
 import TreeStep from "./TreeStep";
+
+/** 읽어 들인 설문 파일 (브라우저 안에만 있다) */
+export interface Survey {
+  fileName: string;
+  tables: (SurveyTable & { sheetName?: string })[];
+  encoding?: CsvEncoding;
+}
 
 export type StepName = "start" | "column" | "analyzing" | "tree";
 
@@ -30,7 +38,8 @@ const LEAVE_WARNING = "결과 파일을 내려받지 않았어요. 나가면 다
 export default function App() {
   const [step, setStep] = useState<StepName>("start");
   // 시작 화면에서 올려 읽어 들인 설문 파일 (브라우저 안에만 있다)
-  const [survey, setSurvey] = useState<{ fileName: string; table: SurveyTable; encoding?: CsvEncoding } | null>(null);
+  // CSV는 표 1개, 엑셀은 응답이 있는 시트마다 표 1개
+  const [survey, setSurvey] = useState<Survey | null>(null);
   const [result, setResult] = useState<ResultFile | null>(null);
   // 고친 결과를 아직 내려받지 않았는지 — 나가기 전 확인 창(PLAN 작업 9)에 쓴다
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -66,11 +75,16 @@ export default function App() {
 
   // Design Ref: DESIGN.md §4.1 ① — 파일을 읽어 표로 만든 뒤 의견 열 선택 화면으로 넘어간다. 읽지 못하면 시작 화면에 이유를 보여 준다.
   async function selectSurvey(file: File, kind: SurveyFileKind): Promise<string | null> {
-    if (kind === "xlsx") return "엑셀(.xlsx) 읽기는 곧 추가돼요 (PLAN 작업 12). 지금은 CSV 파일을 올려 주세요.";
     try {
-      const read = await readCsvFile(file);
-      if (!read.ok) return `파일을 읽지 못했어요 — ${read.reason} 엑셀에서 다시 저장해 보세요.`;
-      setSurvey({ fileName: file.name, table: read.table, encoding: read.table.encoding });
+      if (kind === "xlsx") {
+        const read = await readXlsxFile(file);
+        if (!read.ok) return `파일을 읽지 못했어요 — ${read.reason}`;
+        setSurvey({ fileName: file.name, tables: read.table.sheets });
+      } else {
+        const read = await readCsvFile(file);
+        if (!read.ok) return `파일을 읽지 못했어요 — ${read.reason} 엑셀에서 다시 저장해 보세요.`;
+        setSurvey({ fileName: file.name, tables: [read.table], encoding: read.table.encoding });
+      }
       setStep("column");
       return null;
     } catch {
