@@ -56,7 +56,7 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
         </div>
         {/* 총 의견 수는 중복을 뺀 실제 의견 수 (DESIGN.md §3.5) */}
         <p className="text-ink/70" style={{ fontSize: SIDE_TEXT }}>여러 주제에 걸친 의견은 주제마다 세어요</p>
-        <SquirrelSticker pose="hugging" width="min(220px, 22vh)" />
+        <SquirrelSticker pose="hugging" width="min(240px, 24vh)" />
       </aside>
 
       {/* 가운데: 생각나무 */}
@@ -90,7 +90,7 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
         </ol>
         <div className="flex items-end gap-3">
           <p className="mb-6 rounded-2xl rounded-br-none bg-white px-4 py-2 shadow" style={{ fontSize: SIDE_TEXT }}>도토리를 눌러 보세요!</p>
-          <SquirrelSticker pose="waving" width="min(170px, 17vh)" />
+          <SquirrelSticker pose="waving" width="min(200px, 20vh)" />
         </div>
       </aside>
 
