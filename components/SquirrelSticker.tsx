@@ -10,19 +10,19 @@ const CROPS = {
 const IMAGE_WIDTH = 1122;
 const IMAGE_HEIGHT = 1402;
 
-export default function SquirrelSticker({ pose, width }: { pose: keyof typeof CROPS; width: number }) {
+/** width는 CSS 길이(예: "min(220px, 22vh)") — 화면 높이에 맞춰 커지고 작아지게 비율로 자른다 */
+export default function SquirrelSticker({ pose, width }: { pose: keyof typeof CROPS; width: string }) {
   const crop = CROPS[pose];
-  const scale = width / crop.width;
   return (
     <div
       aria-hidden="true"
       className="shrink-0 rounded-[2rem] border-4 border-acorn-body bg-no-repeat shadow-md"
       style={{
         width,
-        height: crop.height * scale,
+        aspectRatio: `${crop.width} / ${crop.height}`,
         backgroundImage: "url(/thought-tree-bg.webp)",
-        backgroundSize: `${IMAGE_WIDTH * scale}px ${IMAGE_HEIGHT * scale}px`,
-        backgroundPosition: `-${crop.x * scale}px -${crop.y * scale}px`,
+        backgroundSize: `${(IMAGE_WIDTH / crop.width) * 100}% ${(IMAGE_HEIGHT / crop.height) * 100}%`,
+        backgroundPosition: `${(crop.x / (IMAGE_WIDTH - crop.width)) * 100}% ${(crop.y / (IMAGE_HEIGHT - crop.height)) * 100}%`,
       }}
     />
   );

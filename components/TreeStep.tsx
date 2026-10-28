@@ -12,6 +12,12 @@ import SquirrelSticker from "./SquirrelSticker";
 import StepPlaceholder from "./StepPlaceholder";
 import ThoughtTree from "./ThoughtTree";
 
+// 양옆 여백 글자 크기: 최소값, 화면 높이 비율, 최대값 (1080px 화면에서 최대값에 닿는다)
+const BIG_NUMBER = "clamp(3rem, 10vh, 7rem)";
+const SIDE_HEADING = "clamp(1.25rem, 3.6vh, 2.5rem)";
+const SIDE_ITEM = "clamp(1rem, 2.6vh, 1.75rem)";
+const SIDE_TEXT = "clamp(0.875rem, 2vh, 1.25rem)";
+
 interface TreeStepProps {
   result: ResultFile | null;
   /** 운영자가 상세 화면에서 고친 주제를 결과에 반영한다 */
@@ -32,24 +38,25 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
   return (
     <div className="relative flex min-h-0 flex-1 bg-[#f7f3e3]">
       {/* 왼쪽 여백: 숫자 정보 */}
-      <aside className="flex min-w-0 flex-1 flex-col items-center justify-center gap-8 px-8 text-center">
-        <div className="flex flex-col items-center gap-2">
-          <p className="font-display text-heading text-acorn-line">모인 의견</p>
-          <p className="font-display leading-none text-title-green" style={{ fontSize: "7rem" }}>
+      {/* 양옆 글자·그림은 화면 높이(vh)에 맞춰 커지고 작아진다 — 노트북 창에서도 회의실 스크린에서도 잘리지 않게 */}
+      <aside className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-8 text-center" style={{ gap: "3vh" }}>
+        <div className="flex flex-col items-center">
+          <p className="font-display text-acorn-line" style={{ fontSize: SIDE_HEADING }}>모인 의견</p>
+          <p className="font-display leading-none text-title-green" style={{ fontSize: BIG_NUMBER }}>
             {result.opinions.length}
-            <span className="text-heading text-acorn-line">건</span>
+            <span className="text-acorn-line" style={{ fontSize: SIDE_HEADING }}>건</span>
           </p>
         </div>
-        <div className="flex flex-col items-center gap-2">
-          <p className="font-display text-heading text-acorn-line">열린 도토리</p>
-          <p className="font-display leading-none text-title-orange" style={{ fontSize: "7rem" }}>
+        <div className="flex flex-col items-center">
+          <p className="font-display text-acorn-line" style={{ fontSize: SIDE_HEADING }}>열린 도토리</p>
+          <p className="font-display leading-none text-title-orange" style={{ fontSize: BIG_NUMBER }}>
             {result.topics.length}
-            <span className="text-heading text-acorn-line">개</span>
+            <span className="text-acorn-line" style={{ fontSize: SIDE_HEADING }}>개</span>
           </p>
         </div>
         {/* 총 의견 수는 중복을 뺀 실제 의견 수 (DESIGN.md §3.5) */}
-        <p className="text-xl text-ink/70">여러 주제에 걸친 의견은 주제마다 세어요</p>
-        <SquirrelSticker pose="hugging" width={220} />
+        <p className="text-ink/70" style={{ fontSize: SIDE_TEXT }}>여러 주제에 걸친 의견은 주제마다 세어요</p>
+        <SquirrelSticker pose="hugging" width="min(220px, 22vh)" />
       </aside>
 
       {/* 가운데: 생각나무 */}
@@ -60,9 +67,9 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
       </section>
 
       {/* 오른쪽 여백: 주제 한눈에 보기 */}
-      <aside className="flex min-w-0 flex-1 flex-col items-center justify-center gap-6 px-8">
-        <h2 className="font-display text-heading text-acorn-line">🌰 주제 한눈에 보기</h2>
-        <ol className="flex w-full max-w-md flex-col gap-2">
+      <aside className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-8" style={{ gap: "2.5vh" }}>
+        <h2 className="font-display text-acorn-line" style={{ fontSize: SIDE_HEADING }}>🌰 주제 한눈에 보기</h2>
+        <ol className="flex w-full max-w-md flex-col" style={{ gap: "1vh" }}>
           {order.map((index, rank) => {
             const topic = result.topics[index];
             return (
@@ -70,19 +77,20 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
                 <button
                   type="button"
                   onClick={() => setOpenIndex(index)}
-                  className="flex w-full items-center gap-3 rounded-2xl bg-acorn-body px-5 py-2 text-left shadow-sm hover:bg-white"
+                  className="flex w-full items-center gap-3 rounded-2xl bg-acorn-body px-5 text-left shadow-sm hover:bg-white"
+                  style={{ paddingBlock: "0.8vh", fontSize: SIDE_TEXT }}
                 >
-                  <span className="font-display text-xl text-acorn-cap">{rank + 1}</span>
-                  <span className="flex-1 font-display text-2xl text-ink">{topic.name}</span>
-                  <span className="text-xl text-title-orange">{topic.opinionIds.length}건</span>
+                  <span className="font-display text-acorn-cap">{rank + 1}</span>
+                  <span className="flex-1 font-display text-ink" style={{ fontSize: SIDE_ITEM }}>{topic.name}</span>
+                  <span className="text-title-orange">{topic.opinionIds.length}건</span>
                 </button>
               </li>
             );
           })}
         </ol>
         <div className="flex items-end gap-3">
-          <p className="mb-6 rounded-2xl rounded-br-none bg-white px-4 py-2 text-xl shadow">도토리를 눌러 보세요!</p>
-          <SquirrelSticker pose="waving" width={170} />
+          <p className="mb-6 rounded-2xl rounded-br-none bg-white px-4 py-2 shadow" style={{ fontSize: SIDE_TEXT }}>도토리를 눌러 보세요!</p>
+          <SquirrelSticker pose="waving" width="min(170px, 17vh)" />
         </div>
       </aside>
 

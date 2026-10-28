@@ -46,12 +46,12 @@ export default function AcornDetail({ result, topicIndex, order, onNavigate, onC
   const navButton = "rounded-full border-2 border-acorn-line/30 bg-acorn-body px-6 py-2 text-xl hover:bg-white disabled:invisible";
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${topic.name} 주제 상세`} className="absolute inset-0 z-20 flex flex-col gap-6 bg-cream px-12 py-8">
+    <div role="dialog" aria-modal="true" aria-label={`${topic.name} 주제 상세`} className="absolute inset-0 z-20 flex flex-col bg-cream px-12" style={{ gap: "2.5vh", paddingBlock: "3vh" }}>
       <header className="flex items-center gap-6">
         <button type="button" onClick={onClose} className={`${navButton} shrink-0`}>
           ← 생각나무로
         </button>
-        <h2 className="min-w-0 flex-1 truncate text-center font-display text-acorn-line" style={{ fontSize: "3rem" }}>
+        <h2 className="min-w-0 flex-1 truncate text-center font-display text-acorn-line" style={{ fontSize: "clamp(1.75rem, 4.5vh, 3rem)" }}>
           🌰 {topic.name} <span className="text-title-orange">· {topic.opinionIds.length}건</span>
         </h2>
         <button
@@ -81,7 +81,7 @@ export default function AcornDetail({ result, topicIndex, order, onNavigate, onC
           <div className="flex min-h-0 flex-col gap-6 overflow-y-auto">
             <section className="rounded-3xl border-4 border-acorn-line bg-acorn-body px-8 py-6">
               <h3 className="mb-2 font-display text-2xl text-acorn-cap">요약</h3>
-              <p className="leading-relaxed" style={{ fontSize: "2rem" }}>
+              <p className="leading-relaxed" style={{ fontSize: "clamp(1.25rem, 3vh, 2rem)" }}>
                 {topic.summary}
               </p>
             </section>
@@ -91,7 +91,7 @@ export default function AcornDetail({ result, topicIndex, order, onNavigate, onC
               {topic.discussionQuestions.length > 0 ? (
                 <ol className="flex flex-col gap-3">
                   {topic.discussionQuestions.map((question, i) => (
-                    <li key={i} className="flex gap-4 rounded-3xl bg-white/80 px-6 py-4 leading-snug shadow-sm" style={{ fontSize: "1.875rem" }}>
+                    <li key={i} className="flex gap-4 rounded-3xl bg-white/80 px-6 py-4 leading-snug shadow-sm" style={{ fontSize: "clamp(1.125rem, 2.8vh, 1.875rem)" }}>
                       <span className="shrink-0 font-display text-title-green">{i + 1}.</span>
                       <span>{question}</span>
                     </li>
@@ -111,7 +111,7 @@ export default function AcornDetail({ result, topicIndex, order, onNavigate, onC
                 if (!opinion) return null;
                 const others = otherTopicsOf(id);
                 return (
-                  <li key={id} className="rounded-2xl border-l-8 border-leaf/70 bg-white/60 px-5 py-3 text-body leading-relaxed">
+                  <li key={id} className="rounded-2xl border-l-8 border-leaf/70 bg-white/60 px-5 py-3 leading-relaxed" style={{ fontSize: "clamp(1rem, 2.2vh, 1.5rem)" }}>
                     {opinion.softened && (
                       <span className="mr-2 rounded-full bg-sky px-3 py-0.5 text-lg text-ink/80">순화됨</span>
                     )}

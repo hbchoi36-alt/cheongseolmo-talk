@@ -1,5 +1,5 @@
 // Design Ref: DESIGN.md §3.5 — 시안처럼 금색 고리 + 갈색 모자 + 크림색 방패 몸통, 몸통 안에 주제 이름과 의견 건수
-import { Fragment } from "react";
+import { Fragment, useLayoutEffect, useRef } from "react";
 
 interface AcornProps {
   name: string;
@@ -26,8 +26,20 @@ function breakableName(name: string) {
 }
 
 export default function Acorn({ name, count, width, selected, onSelect }: AcornProps) {
-  // 글자는 도토리 너비에 맞춰 정해, 이름(두 줄)과 건수가 몸통(크림색) 안에만 들어가게 한다
-  const fontSize = Math.min(30, Math.max(14, width * 0.12));
+  const labelRef = useRef<HTMLSpanElement>(null);
+
+  // 글자는 도토리 너비의 12%로 시작해, 이름과 건수가 몸통(크림색) 안에 다 들어갈 때까지 줄인다.
+  // 화면이 작아 도토리가 작아져도 모자(갈색)를 침범하거나 잘리지 않게 하기 위해서다.
+  useLayoutEffect(() => {
+    const label = labelRef.current;
+    if (!label) return;
+    let size = Math.min(30, width * 0.12);
+    label.style.fontSize = `${size}px`;
+    while (size > 8 && (label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1)) {
+      size -= 0.5;
+      label.style.fontSize = `${size}px`;
+    }
+  }, [width, name, count]);
 
   return (
     <button
@@ -64,11 +76,12 @@ export default function Acorn({ name, count, width, selected, onSelect }: AcornP
 
       {/* 주제 이름과 건수 — 모자(갈색) 아래, 몸통이 좁아지기 전까지의 영역에만 놓는다 (SVG 기준 y 52~108) */}
       <span
+        ref={labelRef}
         className="absolute inset-x-[15%] top-[41%] bottom-[17%] flex flex-col items-center justify-center overflow-hidden text-center font-display leading-tight text-ink"
-        style={{ fontSize, wordBreak: "keep-all" }}
+        style={{ wordBreak: "keep-all" }}
       >
         <span>{breakableName(name)}</span>
-        <span className="mt-0.5 text-acorn-cap" style={{ fontSize: fontSize * 0.8 }}>
+        <span className="mt-0.5 text-[0.8em] text-acorn-cap">
           {count}건
         </span>
       </span>
