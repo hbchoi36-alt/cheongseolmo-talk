@@ -10,6 +10,18 @@ export type ResultFileReadResult =
   | { ok: true; result: ResultFile }
   | { ok: false; reason: string };
 
+/** 내려받을 파일 이름 — 언제 만든 결과인지 알 수 있게 내려받은 날짜·시각을 붙인다 (예: 청설모Talk-결과-20261028-2130.json) */
+export function resultFileName(now = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `청설모Talk-결과-${stamp}.json`;
+}
+
+/** 결과를 파일에 쓸 글자로 바꾼다 — 메모장으로 열어도 읽기 쉽게 줄을 나눈다 */
+export function serializeResultFile(result: ResultFile): string {
+  return JSON.stringify(result, null, 2) + "\n";
+}
+
 /** 화면에 보여줄 이유는 운영자가 무엇을 해야 할지 알 수 있게 짧게 쓴다 */
 export function readResultFile(text: string): ResultFileReadResult {
   let data: unknown;

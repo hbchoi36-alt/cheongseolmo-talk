@@ -8,6 +8,7 @@ import { useState } from "react";
 import { displayOrder } from "@/lib/topicOrder";
 import type { ResultFile, Topic } from "@/lib/types";
 import AcornDetail from "./AcornDetail";
+import { DownloadResultButton } from "./ResultFileButtons";
 import SquirrelSticker from "./SquirrelSticker";
 import StepPlaceholder from "./StepPlaceholder";
 import ThoughtTree from "./ThoughtTree";
@@ -22,9 +23,14 @@ interface TreeStepProps {
   result: ResultFile | null;
   /** 운영자가 상세 화면에서 고친 주제를 결과에 반영한다 */
   onTopicChange: (topicIndex: number, topic: Topic) => void;
+  /** 결과를 아직 파일로 내려받지 않았는지 */
+  hasUnsavedChanges: boolean;
+  onDownloaded: () => void;
+  /** [처음으로] — 내려받지 않은 결과가 있으면 App이 확인 창을 띄운다 */
+  onGoHome: () => void;
 }
 
-export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
+export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onDownloaded, onGoHome }: TreeStepProps) {
   // 이름을 고쳐도 같은 주제가 열린 채로 남도록 이름 대신 순서 번호로 기억한다
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -37,6 +43,18 @@ export default function TreeStep({ result, onTopicChange }: TreeStepProps) {
 
   return (
     <div className="relative flex min-h-0 flex-1 bg-[#f7f3e3]">
+      {/* 운영자용 버튼 — 화면 구석에 작게 둔다 */}
+      <div className="absolute right-6 top-4 z-10 flex items-start gap-2">
+        <DownloadResultButton result={result} hasUnsavedChanges={hasUnsavedChanges} onDownloaded={onDownloaded} />
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="rounded-full border-2 border-acorn-line/30 bg-acorn-body px-5 py-1.5 text-base hover:bg-white"
+        >
+          처음으로
+        </button>
+      </div>
+
       {/* 왼쪽 여백: 숫자 정보 */}
       {/* 양옆 글자·그림은 화면 높이(vh)에 맞춰 커지고 작아진다 — 노트북 창에서도 회의실 스크린에서도 잘리지 않게 */}
       <aside className="flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-8 text-center" style={{ gap: "3vh" }}>

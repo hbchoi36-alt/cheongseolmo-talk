@@ -2,7 +2,7 @@
 
 // Design Ref: DESIGN.md §3.1 화면 흐름 — 한 페이지 안에서 4단계 화면을 바꿔 보여준다 (주소는 그대로)
 // 단계마다 필요한 데이터(올린 파일, 분석 결과 등)는 이후 작업에서 각 단계에 붙인다.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { resultFileSchema, type ResultFile, type Topic } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
 import AnalyzingStep from "./AnalyzingStep";
@@ -21,6 +21,9 @@ const STEPS: { name: StepName; label: string }[] = [
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
+// Design Ref: DESIGN.md §3.5 — 서버에 저장하지 않으므로, 내려받지 않고 나가면 결과가 사라진다
+const LEAVE_WARNING = "결과 파일을 내려받지 않았어요. 나가면 다시 분석해야 해요. 그래도 나갈까요?";
+
 export default function App() {
   const [step, setStep] = useState<StepName>("start");
   const [result, setResult] = useState<ResultFile | null>(null);
@@ -36,6 +39,24 @@ export default function App() {
     if (!check.ok) console.warn("예시 결과가 규칙에 맞지 않아요", check.violations);
     setResult(example);
     setStep("tree");
+  }
+
+  // 내려받지 않은 결과가 있을 때 창을 닫거나 새로고침하면 브라우저가 확인 창을 띄운다
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    function warn(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedChanges]);
+
+  function goHome() {
+    if (hasUnsavedChanges && !window.confirm(LEAVE_WARNING)) return;
+    setResult(null);
+    setHasUnsavedChanges(false);
+    setPreviewTopicCount(null);
+    setStep("start");
   }
 
   // 결과 파일을 불러오면 AI 호출 없이 바로 생각나무를 띄운다 (PLAN 작업 8)
@@ -62,7 +83,14 @@ export default function App() {
         {step === "start" && <StartStep onResultLoaded={loadResult} />}
         {step === "column" && <ColumnStep />}
         {step === "analyzing" && <AnalyzingStep />}
-        {step === "tree" && <TreeStep key={previewTopicCount ?? "all"} result={shownResult} onTopicChange={changeTopic} />}
+        {step === "tree" && <TreeStep
+            key={previewTopicCount ?? "all"}
+            result={shownResult}
+            onTopicChange={changeTopic}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onDownloaded={() => setHasUnsavedChanges(false)}
+            onGoHome={goHome}
+          />}
       </main>
 
       {/* 화면을 하나씩 만드는 동안 단계를 바로 오가기 위한 개발용 이동 막대 — 실제 배포 화면에는 나오지 않는다 */}
