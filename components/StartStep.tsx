@@ -11,6 +11,18 @@ interface StartStepProps {
   onResultLoaded: (result: ResultFile, fileName: string) => void;
 }
 
+/** 안내 한 줄 — 줄이 바뀌어도 둘째 줄부터 글 시작 위치에 맞춰 들여 써지도록 이모지와 글을 나란히 둔다 */
+function Note({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-2.5">
+      <span aria-hidden="true" className="w-[1.6em] shrink-0 text-center">
+        {icon}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
 export default function StartStep({ onSurveySelected, onResultLoaded }: StartStepProps) {
   return (
     // 내용이 화면보다 길면 위가 잘리지 않고 스크롤되도록, 가운데 정렬은 안쪽 상자의 m-auto로 한다
@@ -31,18 +43,24 @@ export default function StartStep({ onSurveySelected, onResultLoaded }: StartSte
           <LoadResultButton onLoaded={onResultLoaded} />
         </div>
 
-        <ul className="flex max-w-3xl flex-col gap-1 rounded-3xl bg-white/70 px-8 py-4 text-lg leading-relaxed">
-          <li>
-            💡 <strong>간담회 전날 미리</strong> 분석하고 결과 파일을 내려받아 두세요. 당일에는 결과 파일만 불러오면 돼요.
-          </li>
-          <li>📥 구글폼에서 받은 파일이 <strong>.zip</strong>이면 압축을 풀고 안에 있는 CSV 파일을 올려 주세요.</li>
-          <li>🔒 올린 파일은 이 컴퓨터의 브라우저 안에서만 읽어요. 분석할 때는 고른 문항의 의견 글만 AI로 보내요.</li>
+        {/* break-keep: 한국어를 단어 단위로 줄바꿈, text-pretty: 마지막 줄에 한두 글자만 남지 않게 */}
+        <ul className="flex max-w-4xl flex-col gap-1.5 break-keep rounded-3xl bg-white/70 px-8 py-4 text-lg leading-relaxed text-pretty">
+          <Note icon="💡">
+            <strong>간담회 전날 미리</strong> 분석하고 결과 파일을 내려받아 두세요. 당일에는 결과 파일만 불러오면 돼요.
+          </Note>
+          <Note icon="📥">
+            구글폼에서 받은 파일이 <strong>.zip</strong>이면 압축을 풀고 안에 있는 CSV 파일을 올려 주세요.
+          </Note>
+          <Note icon="🔒">올린 파일은 이 컴퓨터의 브라우저 안에서만 읽어요. 분석할 때는 고른 문항의 의견 글만 AI로 보내요.</Note>
         </ul>
 
         {/* 비상 경로: API 분석을 쓸 수 없을 때 다른 담당자도 따라 할 수 있도록 요청문을 앱에서 바로 받는다 */}
-        <section className="flex max-w-3xl flex-wrap items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-acorn-cap/50 px-8 py-3 text-base">
-          <p>
-            🆘 <strong>AI 분석을 쓸 수 없을 때</strong>는 Claude 웹 채팅으로 결과 파일을 만들 수 있어요. 요청문에 방법이 적혀 있어요.
+        <section className="flex max-w-4xl flex-wrap items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-acorn-cap/50 px-8 py-3 text-base">
+          <p className="flex gap-2 break-keep text-pretty">
+            <span aria-hidden="true" className="shrink-0">🆘</span>
+            <span>
+              <strong>AI 분석을 쓸 수 없을 때</strong>는 Claude 웹 채팅으로 결과 파일을 만들 수 있어요. 요청문에 방법이 적혀 있어요.
+            </span>
           </p>
           <a
             href="/request-guide"
