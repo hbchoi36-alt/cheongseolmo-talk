@@ -111,6 +111,7 @@ export type ResultFile = z.infer<typeof resultFileSchema>;
 // Design Ref: DESIGN.md §6 서버 API 오류 형식
 
 export const API_ERROR_CODES = [
+  "UNAUTHORIZED", // 운영자 비밀번호가 없거나 틀림 (401) — 재요청하지 않고 비밀번호 입력 상자를 보여 줌
   "INVALID_INPUT", // 의견이 비었거나 형식이 틀림 (400)
   "AI_RULE_VIOLATION", // AI 결과가 검증 규칙에 맞지 않음 (502) — 재요청은 브라우저가 함
   "AI_UNAVAILABLE", // AI 응답 없음·시간 초과·요청 한도 (503)

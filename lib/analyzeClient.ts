@@ -37,6 +37,8 @@ export interface AnalyzeOptions {
   /** 총 시도 횟수 (처음 1번 + 재요청) */
   maxAttempts?: number;
   endpoint?: string;
+  /** 운영자 비밀번호 — 있으면 요청마다 헤더로 보낸다 (서버가 확인, DESIGN 9절) */
+  password?: string;
   /** 재요청 직전에 불린다 — 화면에 "다시 시도하는 중"을 보여 주는 데 쓴다 */
   onRetry?: (failure: AnalyzeError, nextAttempt: number) => void;
 }
@@ -77,13 +79,13 @@ async function postWithRetry<T>(
   verify: (body: unknown) => T | null,
   options: AnalyzeOptions,
 ): Promise<T> {
-  const { signal, timeoutMs = 120_000, maxAttempts = 2, onRetry } = options;
+  const { signal, timeoutMs = 120_000, maxAttempts = 2, password, onRetry } = options;
 
   let lastFailure: AnalyzeError | null = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     signal?.throwIfAborted();
     try {
-      return await requestOnce(endpoint, payload, verify, timeoutMs, signal);
+      return await requestOnce(endpoint, payload, verify, timeoutMs, signal, password);
     } catch (error) {
       // 운영자가 그만둔 경우는 실패가 아니므로 그대로 올려 보낸다
       if (signal?.aborted) throw error;
@@ -103,6 +105,7 @@ async function requestOnce<T>(
   verify: (body: unknown) => T | null,
   timeoutMs: number,
   userSignal: AbortSignal | undefined,
+  password: string | undefined,
 ): Promise<T> {
   const timeout = AbortSignal.timeout(timeoutMs);
   const signal = userSignal ? AbortSignal.any([userSignal, timeout]) : timeout;
@@ -111,7 +114,8 @@ async function requestOnce<T>(
   try {
     response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // 헤더에는 한글이 못 들어가므로 비밀번호를 인코딩해 보낸다 (서버가 풀어서 비교)
+      headers: { "Content-Type": "application/json", ...(password ? { "x-operator-password": encodeURIComponent(password) } : {}) },
       body: JSON.stringify(payload),
       signal,
     });

@@ -3,22 +3,26 @@
 // Design Ref: DESIGN.md §3.4 ③ 분석 중 / 실패 화면, §6.3 오류별 안내 문구 (PLAN 작업 20)
 // 마운트되면 분석을 시작하고(analyzeAll), 진행 상황("묶음 N / M")을 보여 준다.
 // 성공하면 이름 가림·순화를 적용한 화면용 결과로 조립해(assembleResult) 넘기고, 실패하면 원인별 안내와 버튼을 보여 준다.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { analyzeAll, type AnalysisProgress } from "@/lib/analyzeAll";
 import { AnalyzeError, type AnalyzeFailureKind } from "@/lib/analyzeClient";
 import { assembleResult } from "@/lib/assemble";
+import { clearOperatorPassword, getOperatorPassword, setOperatorPassword } from "@/lib/operatorPassword";
 import type { OpinionInput, ResultFile } from "@/lib/types";
 import StepPlaceholder from "./StepPlaceholder";
 
 type FailureAction = "retry" | "column" | "home";
 
+// 비밀번호 문제(UNAUTHORIZED)는 실패 화면이 아니라 비밀번호 입력 상자로 처리한다
+type FailureKind = Exclude<AnalyzeFailureKind, "UNAUTHORIZED">;
+
 // DESIGN.md §6.3 표의 화면 안내 문구와 버튼. 제목("분석에 실패했어요")은 모든 실패에 같다 (PRD).
-const FAILURES: Record<AnalyzeFailureKind, { message: string; actions: FailureAction[] }> = {
+const FAILURES: Record<FailureKind, { message: string; actions: FailureAction[] }> = {
   INVALID_INPUT: { message: "보낼 의견을 확인하지 못했어요. 의견 열을 다시 골라 주세요.", actions: ["column", "home"] },
   AI_RULE_VIOLATION: { message: "AI 결과가 규칙에 맞지 않았어요. 다시 시도해 주세요.", actions: ["retry", "home"] },
   AI_UNAVAILABLE: { message: "AI가 지금 응답하지 않아요. 잠시 후 다시 시도해 주세요.", actions: ["retry", "home"] },
   SERVER_CONFIG: {
-    message: "AI 연결 설정(API 키·모델)에 문제가 있어요. 관리자에게 알려 주세요. 저장한 결과 파일이 있으면 불러올 수 있어요.",
+    message: "서버 설정(API 키·모델·운영자 비밀번호)에 문제가 있어요. 관리자에게 알려 주세요. 저장한 결과 파일이 있으면 불러올 수 있어요.",
     actions: ["home"],
   },
   NETWORK: { message: "응답이 너무 늦거나 연결이 끊겼어요. 다시 시도해 주세요.", actions: ["retry", "home"] },
@@ -28,7 +32,9 @@ const ACTION_LABEL: Record<FailureAction, string> = { retry: "다시 시도", co
 
 type View =
   | { status: "running"; progress: AnalysisProgress | null }
-  | { status: "failed"; kind: AnalyzeFailureKind }
+  | { status: "failed"; kind: FailureKind }
+  // 서버가 운영자 비밀번호를 요구한 상태 — wrong은 방금 보낸 비밀번호가 틀렸다는 뜻
+  | { status: "locked"; wrong: boolean }
   // 분석이 끝나 완료 팝업을 띄운 상태 — 운영자가 버튼을 눌러야 생각나무로 넘어간다
   | { status: "done"; result: ResultFile };
 
@@ -76,8 +82,11 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
     };
 
     async function run(target: NonNullable<typeof pending>, controller: AbortController) {
+      // 이 탭에서 이미 맞게 입력한 비밀번호가 있으면 그대로 쓴다 (없으면 서버가 요구할 때만 묻는다)
+      const password = getOperatorPassword();
       try {
         const analysis = await analyzeAll(target.opinions, {
+          password,
           signal: controller.signal,
           onProgress: (progress) => {
             if (!controller.signal.aborted) setView({ status: "running", progress });
@@ -95,7 +104,14 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
         setView({ status: "done", result: assembled.result });
       } catch (error) {
         if (controller.signal.aborted) return;
-        setView({ status: "failed", kind: error instanceof AnalyzeError ? error.kind : "NETWORK" });
+        const kind = error instanceof AnalyzeError ? error.kind : "NETWORK";
+        if (kind === "UNAUTHORIZED") {
+          // 보낸 비밀번호가 있었다면 틀린 것이니 지워서 다시 입력받는다
+          if (password) clearOperatorPassword();
+          setView({ status: "locked", wrong: password !== "" });
+          return;
+        }
+        setView({ status: "failed", kind });
       }
     }
   }, [pending, attempt]);
@@ -115,6 +131,11 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
 
   const handlers: Record<FailureAction, () => void> = { retry, column: onChooseColumn, home: onGoHome };
 
+  function submitPassword(password: string) {
+    setOperatorPassword(password);
+    retry();
+  }
+
   return (
     <div className="relative flex flex-1 flex-col">
       <header className="px-8 pt-6">
@@ -130,6 +151,8 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
       <section className="flex flex-1 flex-col items-center justify-center gap-5 px-8 pb-16 text-center">
         {view.status === "failed" ? (
           <Failed kind={view.kind} handlers={handlers} />
+        ) : view.status === "locked" ? (
+          <PasswordPrompt wrong={view.wrong} onSubmit={submitPassword} />
         ) : (
           // 완료 팝업이 뜨면 이 화면은 어두운 막 뒤로 가려진다 (묶음 진행 문구는 빼고 기본 안내만 남김)
           <Running count={pending.opinions.length} progress={view.status === "running" ? view.progress : null} />
@@ -191,7 +214,47 @@ function Running({ count, progress }: { count: number; progress: AnalysisProgres
   );
 }
 
-function Failed({ kind, handlers }: { kind: AnalyzeFailureKind; handlers: Record<FailureAction, () => void> }) {
+/** 운영자 비밀번호 입력 — 분석 요청이 처음 막혔을 때와 비밀번호가 틀렸을 때 보인다 */
+function PasswordPrompt({ wrong, onSubmit }: { wrong: boolean; onSubmit: (password: string) => void }) {
+  const [value, setValue] = useState("");
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (value !== "") onSubmit(value);
+  }
+
+  return (
+    <form onSubmit={submit} className="flex w-full max-w-md flex-col items-center gap-5">
+      <p aria-hidden="true" className="text-7xl">🔒</p>
+      <h2 className="font-display text-heading text-acorn-line">운영자 비밀번호가 필요해요</h2>
+      <p className="text-xl text-ink/80">분석은 운영자만 시작할 수 있어요. 결과 파일 불러오기는 비밀번호 없이 돼요.</p>
+      <input
+        type="password"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        autoFocus
+        autoComplete="current-password"
+        aria-label="운영자 비밀번호"
+        aria-invalid={wrong}
+        className="w-full rounded-full border-2 border-acorn-line/30 bg-white px-6 py-2.5 text-center text-xl text-ink outline-none focus:border-title-green"
+      />
+      {wrong && (
+        <p role="alert" className="text-lg text-heart">
+          비밀번호가 맞지 않아요. 다시 입력해 주세요.
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={value === ""}
+        className="rounded-full bg-title-green px-10 py-2.5 font-display text-2xl text-white hover:opacity-90 disabled:cursor-not-allowed disabled:bg-ink/20"
+      >
+        분석 시작 ▶
+      </button>
+    </form>
+  );
+}
+
+function Failed({ kind, handlers }: { kind: FailureKind; handlers: Record<FailureAction, () => void> }) {
   const { message, actions } = FAILURES[kind];
 
   return (

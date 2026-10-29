@@ -19,6 +19,8 @@ export interface AnalysisProgress {
 
 export interface AnalyzeAllOptions {
   signal?: AbortSignal;
+  /** 운영자 비밀번호 — 분석·병합 요청마다 보낸다 */
+  password?: string;
   onProgress?: (progress: AnalysisProgress) => void;
   /** 시도당 최대 대기 시간 (기본 120초) */
   timeoutMs?: number;
@@ -33,6 +35,7 @@ export interface AnalyzeAllOptions {
 export async function analyzeAll(opinions: readonly OpinionInput[], options: AnalyzeAllOptions = {}): Promise<AiAnalysis> {
   const {
     signal,
+    password,
     onProgress,
     timeoutMs,
     batchSize = RULES.maxOpinionsPerRequest,
@@ -60,6 +63,7 @@ export async function analyzeAll(opinions: readonly OpinionInput[], options: Ana
       try {
         analyses[index] = await analyzeOpinions(batches[index], {
           signal: batchSignal,
+          password,
           timeoutMs,
           endpoint: analyzeEndpoint,
           onRetry: () => {
@@ -91,6 +95,7 @@ export async function analyzeAll(opinions: readonly OpinionInput[], options: Ana
 
   const merged = await mergeTopics(plan.request, {
     signal,
+    password,
     timeoutMs,
     endpoint: mergeEndpoint,
     onRetry: () => {

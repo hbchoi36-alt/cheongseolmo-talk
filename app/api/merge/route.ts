@@ -2,6 +2,7 @@
 // 묶음이 2개 이상일 때만 브라우저가 부른다. 요청 1번에 OpenAI 호출 1번, 재요청은 브라우저 담당.
 // 받은 주제와 대표 의견은 이 요청을 처리하는 동안에만 쓰고, 저장하거나 로그에 남기지 않는다.
 import { errorResponse } from "@/lib/server/apiError";
+import { requireOperator } from "@/lib/server/auth";
 import { MERGE_INSTRUCTIONS, MERGE_SCHEMA, MERGE_SCHEMA_NAME, buildMergeInput } from "@/lib/server/mergePrompt";
 import { AiCallError, askStructured } from "@/lib/server/openai";
 import { MAX_CANDIDATE_TOPICS } from "@/lib/topicPresets";
@@ -13,6 +14,10 @@ export const maxDuration = 300;
 const MAX_BODY_BYTES = 1_000_000;
 
 export async function POST(request: Request) {
+  // 가장 먼저 운영자 비밀번호를 확인한다 (틀리면 본문을 읽지도, AI를 부르지도 않는다)
+  const denied = await requireOperator(request);
+  if (denied) return denied;
+
   const declaredLength = Number(request.headers.get("content-length"));
   if (declaredLength > MAX_BODY_BYTES) return tooLarge();
 

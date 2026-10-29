@@ -4,6 +4,7 @@ import "server-only";
 import type { ApiErrorCode, ApiErrorResponse } from "@/lib/types";
 
 const STATUS: Record<ApiErrorCode, number> = {
+  UNAUTHORIZED: 401,
   INVALID_INPUT: 400,
   AI_RULE_VIOLATION: 502,
   AI_UNAVAILABLE: 503,
