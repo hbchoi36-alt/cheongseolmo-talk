@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# 값이 비어 있는 예시 파일만 올린다 (.env 같은 진짜 비밀 파일은 계속 제외)
+!.env.example
 
 # vercel
 .vercel

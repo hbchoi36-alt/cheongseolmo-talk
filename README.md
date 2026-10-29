@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 청설모 Talk 🐿️
 
-## Getting Started
+간담회 **사전 설문 의견**을 AI가 주제별로 분류·요약하고 토론 질문을 만들어, **생각나무 위의 도토리**로 회의실 스크린에 보여 주는 웹앱입니다.
 
-First, run the development server:
+공사 대표 청렴소통 프로그램 '청설모' 간담회를 운영할 때, 담당자가 직원 의견을 손으로 분류·요약해 PPT로 만들던 일을 줄이고 간담회 토론 참여를 높이려고 만들었습니다.
+
+## 어떤 문제를 푸나요
+
+| | 현재(수작업) | 청설모 Talk |
+|---|---|---|
+| 의견 30건 분석·정리 | 약 120분 | 앱 구간 약 21초 (목표 36분 이내, 사람이 훑어보는 시간 포함) |
+| 의견 누락 | 사람 실수 가능 | 앱이 규칙으로 검증해 누락 0건 |
+| 간담회 자료 | 정적인 PPT | 주제마다 도토리 1개, 의견이 많을수록 큰 도토리 |
+
+## 이렇게 씁니다
+
+1. 구글폼에서 응답을 **CSV 또는 엑셀(.xlsx)** 로 내려받아 앱에 올립니다.
+2. 분석할 **의견 열**을 고르면 빈칸을 뺀 유효 의견 수가 보입니다.
+3. AI가 의견을 **미리 정한 7개 분야 + 기타**로 분류하고 요약(100자 이내)과 토론 질문(최대 3개)을 만듭니다.
+4. **생각나무**에 주제별 도토리가 열립니다. 도토리를 누르면 요약, 의견 원문, 토론 질문이 나옵니다.
+5. 운영자가 주제 이름·요약·질문을 직접 고치고 **결과 파일(JSON)** 로 저장합니다. 간담회 당일에는 이 파일만 불러오면 AI를 다시 쓰지 않아도 됩니다.
+6. 간담회 마무리에는 **사후 설문 QR코드** 화면을 보여 줍니다.
+
+## 주요 기능
+
+- **파일 읽기**: CSV(UTF-8·BOM·CP949 자동 인식)와 xlsx를 브라우저 안에서 읽습니다. 원본 파일은 서버로 보내지 않습니다.
+- **AI 분석**: OpenAI API로 분류·요약·토론 질문·이름 찾기·거친 표현 순화를 합니다. 의견이 300건을 넘으면 묶음으로 나눠 분석한 뒤 합칩니다.
+- **결과 검증**: AI 결과를 그대로 믿지 않고 앱이 규칙을 직접 검사합니다(의견 누락 0건, 주제 7개 이하, 요약 100자 이하, 질문 3개 이하 등).
+- **원문 보호**: 의견 속 사람 이름은 `●●`로 가리고, 욕설·공격적 표현은 원문을 숨기고 순화한 문장으로 보여 줍니다.
+- **생각나무 시각화**: 도토리 크기가 의견 수에 비례하고, 회의실 스크린에서 읽히도록 큰 글자·높은 대비로 만들었습니다.
+- **결과 파일 저장·불러오기**: 서버에 아무것도 저장하지 않습니다. 결과는 사용자가 내려받은 파일로만 보관됩니다.
+- **청설모 마을 지도, 사후 설문 QR**: 간담회 시작 전 프로그램 소개, 마무리의 설문 안내(구글폼 링크로 QR 생성).
+- **비상 경로**: AI 분석을 쓸 수 없을 때 웹 채팅으로 결과 파일을 만드는 요청문을 시작 화면에서 내려받을 수 있습니다.
+
+## 기술 스택
+
+- Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4
+- OpenAI API (`gpt-6.1-sol`, `OPENAI_MODEL`로 변경 가능) — 호출은 서버 전용 모듈 한 곳에서만 합니다.
+- papaparse · read-excel-file · zod · uqr(QR 생성)
+- 배포: Vercel
+
+## 직접 실행해 보기
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env     # 만든 .env에 OPENAI_API_KEY를 넣으세요
+npm run dev              # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm run lint
+npm run build
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env`는 `.gitignore`로 제외되어 저장소에 올라가지 않습니다. 필요한 환경변수는 [`.env.example`](.env.example)에 있습니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 예시 데이터
 
-## Learn More
+`samples/`에 **가상의** 설문 응답이 있습니다(실제 직원 의견이 아닙니다). 구글폼 원본 형식 CSV, UTF-8·CP949 CSV, xlsx, 이름·욕설이 들어 있는 확인용 파일을 올려 앱을 시험해 볼 수 있습니다.
 
-To learn more about Next.js, take a look at the following resources:
+## 문서
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| 문서 | 내용 |
+|---|---|
+| [PRD.md](PRD.md) | 기획서: 문제, 목표, 기능, 범위, 보안 |
+| [PLAN.md](PLAN.md) | 개발 계획서: 작업 순서, 성공 기준과 측정 결과 |
+| [DESIGN.md](DESIGN.md) | 설계서: 화면, 데이터 흐름, 검증 규칙, API |
+| [CLAUDE.md](CLAUDE.md) | 이 저장소에서 AI와 사람이 함께 지키는 작업 규칙 |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 보안·개인정보
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- API 키는 서버에서만 쓰고 브라우저에 노출하지 않습니다.
+- 업로드한 의견은 분석 요청을 처리하는 동안에만 쓰며 서버에 저장·기록하지 않습니다(OpenAI 쪽 저장도 끕니다).
+- 분석할 때 **의견 원문이 OpenAI로 전송됩니다.** 실제 직원 의견을 쓰기 전에 기관의 보안·개인정보 기준을 확인해야 합니다.
+- 개발·시연에는 비식별 가상 데이터만 사용합니다.
