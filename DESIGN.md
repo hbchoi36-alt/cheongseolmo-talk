@@ -438,7 +438,10 @@ interface ResultFile {
 모든 실패 화면의 제목은 PRD 문구 그대로 **"분석에 실패했어요"**이고, 위 안내 문구는 그 아래에 작게 보인다.
 
 ### 6.4 OpenAI 호출 방식 (2026-10-29 Claude에서 변경)
-- **모델**: 환경변수 `OPENAI_MODEL`로 정한다. 공식 문서(models 페이지) 기준 후보는 `gpt-6.1-sol`(성능·비용 균형)과 `gpt-6-astra`(공식 기본 권장). 실제 호출로 사용 가능 여부·응답 시간을 확인한 뒤 기본값을 확정한다 (작업 14).
+- **모델**: 기본 `gpt-6.1-sol`, 환경변수 `OPENAI_MODEL`로 바꿀 수 있다. 2026-10-29 실제 호출로 후보 4개(`gpt-6.1-sol`·`gpt-6-astra`·`gpt-6.1-terra`·`gpt-6-luna`)를 예시 의견 30건·300건으로 비교했다: 모두 의견 누락 0건·글자 수 규칙 준수, 300건 응답 시간은 terra 16초·sol 20초·astra 24초(시도당 한도 120초에 충분). 속도는 변별력이 없어 공식 문서가 "성능·비용 균형"이라고 한 sol을 골랐다. 분류 품질은 작업 23(SC-9, 사람 확인)에서 보고, 마음에 안 들면 `OPENAI_MODEL`만 바꾼다.
+- **생각 깊이**: `reasoning.effort: "low"`로 보낸다(전 후보 모델이 받아들임). 속도가 빠르고 규칙 준수에는 문제가 없었다.
+- **알려진 점**: 이 PC에서는 `api.openai.com` 첫 연결이 느려 10초 연결 제한에 걸려 첫 요청이 실패하는 일이 있다(IPv4 연결 11초). 연결된 뒤에는 2~3초에 응답한다. 브라우저 자동 재요청 1번(4.3절)이 흡수하고, Vercel 배포 환경에서는 해당 없을 것으로 본다.
+- **프롬프트에서 막을 것**: `low`에서 sol·astra가 의견 0건인 빈 '기타' 주제를 만든 적이 있다. 분석 지시문(작업 16)에 "해당 의견이 없으면 '기타'를 만들지 말 것"을 넣고, 4.2절의 빈 주제 검사가 잡는다.
 - **호출 방식**: 공식 `openai` SDK의 Responses API(`client.responses.create`)를 쓴다.
 - **구조화 출력**: `text.format`에 `type: "json_schema"`, `strict: true`로 스키마를 넘겨 정해진 JSON 형식으로만 답을 받는다. 모든 객체에 `additionalProperties: false`, 모든 속성을 `required`에 넣어야 한다. 받은 뒤에는 zod로 한 번 더 검사한다 (AI 출력을 그대로 믿지 않는다).
 - **끊김·거절 대비**: `response.status === "incomplete"`(`max_output_tokens`)이면 오류로 처리하고, 응답 내용에 `type: "refusal"`이 있으면 거절로 처리해 `AI_UNAVAILABLE`로 돌려준다.

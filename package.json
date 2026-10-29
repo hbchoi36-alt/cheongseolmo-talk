@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "next": "16.4.3",
+    "openai": "7.45.1",
     "papaparse": "5.7.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "read-excel-file": "9.3.13",
+    "server-only": "0.0.1",
     "uqr": "0.1.3",
     "zod": "4.6.7"
   },

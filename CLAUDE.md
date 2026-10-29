@@ -166,7 +166,7 @@ npm run lint    # ESLint (next core-web-vitals + typescript)
 ## 10. 확인 필요 사항 (초안 작성 시 발견)
 
 - [x] AI 서비스를 OpenAI로 변경함(2026-10-29): `.env`에 있는 `OPENAI_API_KEY`를 쓰므로 새 키를 추가할 필요가 없음.
-- [ ] OpenAI 연결과 사용할 모델 이름은 개발 단위 5에서 실제 호출로 확인해 확정함.
+- [x] OpenAI 연결 확인 완료(작업 14, 2026-10-29): 기본 모델 `gpt-6.1-sol`, 변경은 `.env`의 `OPENAI_MODEL`. 이 PC에서는 첫 연결이 느려 첫 요청이 실패할 수 있고 브라우저 자동 재요청이 흡수함(DESIGN 6.4절).
 - [x] `app/layout.tsx`를 `lang="ko"`, 서비스명 메타데이터로 변경함.
 - [x] `git init` 완료 (아직 커밋 없음). `.bkit/`(플러그인 로컬 상태)은 `.gitignore`에 추가함.
 - [x] 대량 의견 처리 방식 결정: 브라우저 파싱 + 의견 텍스트만 묶음 단위로 서버 전송 (5절 참고).
