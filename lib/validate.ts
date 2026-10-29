@@ -1,7 +1,7 @@
 // Design Ref: DESIGN.md §4.1 ⑤·⑥ — AI 결과를 그대로 믿지 않고 앱 코드가 PRD 규칙 준수를 최종 확인한다.
 // 서버(AI 응답 직후), 브라우저(화면용 결과 조립 후), 결과 파일 불러오기에서 같은 함수를 쓴다.
 // 위반 메시지는 로그에 남을 수 있으므로 의견 원문은 넣지 않고 번호와 주제 이름만 쓴다.
-import { RULES, type AiAnalysis, type OpinionInput, type ResultFile, type Topic } from "./types";
+import { RULES, type AiAnalysis, type MergeResponse, type OpinionInput, type ResultFile, type Topic } from "./types";
 
 export type RuleCode =
   // PRD §5 AI 규칙
@@ -16,7 +16,12 @@ export type RuleCode =
   | "EMPTY_TOPIC" // 의견이 0건인 주제 (크기 0 도토리)
   | "DUPLICATE_TOPIC_NAME" // 이름이 같은 주제가 둘 이상
   | "EMPTY_SUMMARY" // 요약이 비어 있음
-  | "UNKNOWN_FLAG_ID"; // 이름 가림·순화 정보가 없는 번호를 가리킴
+  | "UNKNOWN_FLAG_ID" // 이름 가림·순화 정보가 없는 번호를 가리킴
+  // 주제 병합 검사 (DESIGN.md §4.3)
+  | "MERGE_UNKNOWN_SOURCE" // 보내지 않은 임시 주제 번호를 합쳤다고 함
+  | "MERGE_SOURCE_REUSED" // 같은 임시 주제를 두 번 이상 씀 (건수 부풀림)
+  | "MERGE_SOURCE_MISSING" // 어디에도 합쳐지지 않은 임시 주제가 있음 (의견 누락)
+  | "MERGE_EMPTY_SOURCES"; // 아무것도 합치지 않은 주제
 
 export interface RuleViolation {
   rule: RuleCode;
@@ -152,6 +157,80 @@ export function validateAiAnalysis(analysis: AiAnalysis, inputs: readonly Opinio
   }
 
   return toResult(violations);
+}
+
+/**
+ * 주제 병합 결과 검사: 합친 주제가 규칙(7개 이내, 이름·요약·질문)을 지키고,
+ * 보낸 임시 주제가 정확히 한 번씩만 쓰였는지 확인한다 (한 번이라도 빠지면 그 주제의 의견이 통째로 누락된다).
+ */
+export function validateMerge(merged: MergeResponse, inputTopicIds: readonly string[]): RuleViolation[] {
+  const violations: RuleViolation[] = [];
+  const known = new Set(inputTopicIds);
+  const used = new Set<string>();
+  const seenNames = new Set<string>();
+
+  if (merged.topics.length > RULES.maxTopics) {
+    violations.push({
+      rule: "TOO_MANY_TOPICS",
+      message: `합친 주제가 ${merged.topics.length}개예요. '${RULES.otherTopicName}' 포함 최대 ${RULES.maxTopics}개까지만 만들 수 있어요.`,
+    });
+  }
+
+  for (const topic of merged.topics) {
+    const name = topic.name.trim();
+
+    if (seenNames.has(name)) {
+      violations.push({ rule: "DUPLICATE_TOPIC_NAME", topicName: name, message: `'${name}' 주제가 두 번 이상 있어요.` });
+    }
+    seenNames.add(name);
+
+    const nameLength = charLength(name);
+    if (nameLength > RULES.maxTopicNameLength) {
+      violations.push({
+        rule: "TOPIC_NAME_TOO_LONG",
+        topicName: name,
+        message: `'${name}' 주제 이름이 ${nameLength}자예요. ${RULES.maxTopicNameLength}자 이내여야 해요.`,
+      });
+    }
+    if (topic.summary.trim() === "") {
+      violations.push({ rule: "EMPTY_SUMMARY", topicName: name, message: `'${name}' 주제의 요약이 비어 있어요.` });
+    }
+    if (charLength(topic.summary) > RULES.maxSummaryLength) {
+      violations.push({
+        rule: "SUMMARY_TOO_LONG",
+        topicName: name,
+        message: `'${name}' 주제의 요약이 ${charLength(topic.summary)}자예요. ${RULES.maxSummaryLength}자 이내여야 해요.`,
+      });
+    }
+    if (topic.discussionQuestions.length > RULES.maxQuestionsPerTopic) {
+      violations.push({
+        rule: "TOO_MANY_QUESTIONS",
+        topicName: name,
+        message: `'${name}' 주제의 토론 질문이 ${topic.discussionQuestions.length}개예요. 최대 ${RULES.maxQuestionsPerTopic}개까지예요.`,
+      });
+    }
+
+    if (topic.sourceTopicIds.length === 0) {
+      violations.push({ rule: "MERGE_EMPTY_SOURCES", topicName: name, message: `'${name}' 주제에 합친 주제가 하나도 없어요.` });
+    }
+    for (const id of topic.sourceTopicIds) {
+      if (!known.has(id)) {
+        violations.push({ rule: "MERGE_UNKNOWN_SOURCE", topicName: name, message: `'${name}' 주제가 없는 임시 주제(${id})를 합쳤다고 해요.` });
+      } else if (used.has(id)) {
+        violations.push({ rule: "MERGE_SOURCE_REUSED", topicName: name, message: `임시 주제 ${id}가 두 번 이상 쓰였어요.` });
+      }
+      used.add(id);
+    }
+  }
+
+  const missing = inputTopicIds.filter((id) => !used.has(id));
+  if (missing.length > 0) {
+    violations.push({
+      rule: "MERGE_SOURCE_MISSING",
+      message: `어디에도 합쳐지지 않은 임시 주제가 ${missing.length}개 있어요 (${missing.join(", ")}).`,
+    });
+  }
+  return violations;
 }
 
 /** ⑥·결과 파일 불러오기: 화면용 결과가 규칙을 지키는지 검사한다. */

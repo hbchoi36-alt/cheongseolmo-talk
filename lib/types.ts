@@ -10,6 +10,9 @@ export const RULES = {
   maxQuestionsPerTopic: 3,
   maxTopicNameLength: 10, // 도토리 안에 큰 글자로 들어가도록 (DESIGN.md §3.5)
   maxOpinionsPerRequest: 300, // 분석 요청 1번에 보내는 최대 의견 수 (DESIGN.md §4.3)
+  maxConcurrentBatches: 3, // 묶음 분석을 동시에 보내는 최대 개수 (DESIGN.md §4.3)
+  maxMergeInputTopics: 200, // 병합 요청 1번에 보내는 최대 주제 수 (묶음별 주제를 모두 합친 개수)
+  mergeSampleTextCount: 5, // 병합 때 주제마다 함께 보내는 대표 의견 수 (DESIGN.md §4.3)
   otherTopicName: "기타",
   nameMask: "●●",
 } as const;
@@ -66,6 +69,36 @@ export const resultFileSchema = z.object({
   opinions: z.array(displayOpinionSchema),
   topics: z.array(topicSchema),
 });
+
+// 주제 병합 (DESIGN.md §4.3, §6.2) — 묶음별 주제를 7개 이내로 합칠 때 서버와 주고받는 형식
+
+export const mergeTopicInputSchema = z.object({
+  id: z.string().min(1), // 묶음을 가로질러 하나뿐인 임시 번호 ("t1", "t2", …)
+  name: z.string().min(1),
+  summary: z.string(),
+  count: z.number().int().min(0), // 그 주제에 속한 의견 수
+  sampleTexts: z.array(z.string()), // 대표 의견 (최대 mergeSampleTextCount건)
+});
+
+export const mergeRequestSchema = z.object({
+  topics: z.array(mergeTopicInputSchema).min(2),
+});
+
+export const mergedTopicSchema = z.object({
+  name: z.string().min(1),
+  summary: z.string(),
+  discussionQuestions: z.array(z.string()),
+  sourceTopicIds: z.array(z.string()), // 어떤 임시 주제들을 합쳤는지 — 원래 주제는 정확히 한 번씩 쓰여야 한다
+});
+
+export const mergeResponseSchema = z.object({
+  topics: z.array(mergedTopicSchema),
+});
+
+export type MergeTopicInput = z.infer<typeof mergeTopicInputSchema>;
+export type MergeRequest = z.infer<typeof mergeRequestSchema>;
+export type MergedTopic = z.infer<typeof mergedTopicSchema>;
+export type MergeResponse = z.infer<typeof mergeResponseSchema>;
 
 export type OpinionInput = z.infer<typeof opinionInputSchema>;
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;

@@ -102,6 +102,14 @@ export default function App() {
     setStep("tree");
   }
 
+  // 분석이 끝나면 곧바로 생각나무를 띄운다. 새로 만든 결과는 아직 파일로 내려받지 않았으므로 나가기 전 확인 창 대상이다.
+  function finishAnalysis(analyzed: ResultFile) {
+    setResult(analyzed);
+    setHasUnsavedChanges(true);
+    setPreviewTopicCount(null);
+    setStep("tree");
+  }
+
   function changeTopic(topicIndex: number, topic: Topic) {
     setResult((current) =>
       current ? { ...current, topics: current.topics.map((t, i) => (i === topicIndex ? topic : t)) } : current,
@@ -127,7 +135,12 @@ export default function App() {
           />
         )}
         {step === "analyzing" && (
-          <AnalyzingStep opinionCount={pending?.opinions.length ?? null} onBack={() => setStep(survey ? "column" : "start")} />
+          <AnalyzingStep
+            pending={pending}
+            onDone={finishAnalysis}
+            onChooseColumn={() => setStep(survey ? "column" : "start")}
+            onGoHome={goHome}
+          />
         )}
         {step === "tree" && <TreeStep
             key={previewTopicCount ?? "all"}

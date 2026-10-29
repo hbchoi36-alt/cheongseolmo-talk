@@ -1,7 +1,16 @@
-// Design Ref: DESIGN.md §4.3 시간 예산, §6.3 오류와 화면 처리 — 브라우저가 /api/analyze를 부르고, 실패하면 1번 자동 재요청한다 (PLAN 작업 17)
+// Design Ref: DESIGN.md §4.3 시간 예산, §6.3 오류와 화면 처리 — 브라우저가 /api/analyze·/api/merge를 부르고, 실패하면 1번 자동 재요청한다 (PLAN 작업 17·19)
 // 서버는 요청 1번에 AI 호출 1번만 하므로 재요청은 여기서 맡는다. 시도당 최대 120초, 총 2번.
-import { API_ERROR_CODES, aiAnalysisSchema, type AiAnalysis, type ApiErrorCode, type OpinionInput } from "./types";
-import { validateAiAnalysis } from "./validate";
+import {
+  API_ERROR_CODES,
+  aiAnalysisSchema,
+  mergeResponseSchema,
+  type AiAnalysis,
+  type ApiErrorCode,
+  type MergeRequest,
+  type MergeResponse,
+  type OpinionInput,
+} from "./types";
+import { validateAiAnalysis, validateMerge } from "./validate";
 
 /** 실패 원인 — 서버가 준 코드이거나, 서버 응답을 받지 못한 경우(NETWORK: 120초 초과·연결 끊김·형식이 아닌 응답) */
 export type AnalyzeFailureKind = ApiErrorCode | "NETWORK";
@@ -32,14 +41,46 @@ export interface AnalyzeOptions {
 }
 
 /** 의견 한 묶음(최대 300건)을 분석한다. 모든 시도가 실패하면 마지막 실패를 AnalyzeError로 던진다. */
-export async function analyzeOpinions(opinions: readonly OpinionInput[], options: AnalyzeOptions = {}): Promise<AiAnalysis> {
-  const { signal, timeoutMs = 120_000, maxAttempts = 2, endpoint = "/api/analyze", onRetry } = options;
+export function analyzeOpinions(opinions: readonly OpinionInput[], options: AnalyzeOptions = {}): Promise<AiAnalysis> {
+  return postWithRetry(
+    options.endpoint ?? "/api/analyze",
+    { opinions },
+    (body) => {
+      // 서버가 이미 검증했지만 AI 결과를 그대로 믿지 않는다는 원칙대로 브라우저에서도 한 번 더 확인한다
+      const analysis = aiAnalysisSchema.safeParse(body);
+      return analysis.success && validateAiAnalysis(analysis.data, opinions).ok ? analysis.data : null;
+    },
+    options,
+  );
+}
+
+/** 묶음별 주제를 7개 이내로 합친다. 원래 주제가 정확히 한 번씩 쓰였는지까지 확인하고, 아니면 재요청한다. */
+export function mergeTopics(request: MergeRequest, options: AnalyzeOptions = {}): Promise<MergeResponse> {
+  const inputIds = request.topics.map((topic) => topic.id);
+  return postWithRetry(
+    options.endpoint ?? "/api/merge",
+    request,
+    (body) => {
+      const merged = mergeResponseSchema.safeParse(body);
+      return merged.success && validateMerge(merged.data, inputIds).length === 0 ? merged.data : null;
+    },
+    options,
+  );
+}
+
+async function postWithRetry<T>(
+  endpoint: string,
+  payload: unknown,
+  verify: (body: unknown) => T | null,
+  options: AnalyzeOptions,
+): Promise<T> {
+  const { signal, timeoutMs = 120_000, maxAttempts = 2, onRetry } = options;
 
   let lastFailure: AnalyzeError | null = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     signal?.throwIfAborted();
     try {
-      return await requestOnce(opinions, endpoint, timeoutMs, signal);
+      return await requestOnce(endpoint, payload, verify, timeoutMs, signal);
     } catch (error) {
       // 운영자가 그만둔 경우는 실패가 아니므로 그대로 올려 보낸다
       if (signal?.aborted) throw error;
@@ -53,12 +94,13 @@ export async function analyzeOpinions(opinions: readonly OpinionInput[], options
   throw lastFailure ?? new AnalyzeError("NETWORK", "분석 요청이 실패했어요.");
 }
 
-async function requestOnce(
-  opinions: readonly OpinionInput[],
+async function requestOnce<T>(
   endpoint: string,
+  payload: unknown,
+  verify: (body: unknown) => T | null,
   timeoutMs: number,
   userSignal: AbortSignal | undefined,
-): Promise<AiAnalysis> {
+): Promise<T> {
   const timeout = AbortSignal.timeout(timeoutMs);
   const signal = userSignal ? AbortSignal.any([userSignal, timeout]) : timeout;
 
@@ -67,7 +109,7 @@ async function requestOnce(
     response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ opinions }),
+      body: JSON.stringify(payload),
       signal,
     });
   } catch (error) {
@@ -85,12 +127,9 @@ async function requestOnce(
 
   if (!response.ok) throw new AnalyzeError(readErrorKind(body), "분석에 실패했어요.");
 
-  // 서버가 이미 검증했지만 AI 결과를 그대로 믿지 않는다는 원칙대로 브라우저에서도 한 번 더 확인한다
-  const analysis = aiAnalysisSchema.safeParse(body);
-  if (!analysis.success || !validateAiAnalysis(analysis.data, opinions).ok) {
-    throw new AnalyzeError("AI_RULE_VIOLATION", "AI 결과가 규칙에 맞지 않아요.");
-  }
-  return analysis.data;
+  const verified = verify(body);
+  if (verified === null) throw new AnalyzeError("AI_RULE_VIOLATION", "AI 결과가 규칙에 맞지 않아요.");
+  return verified;
 }
 
 function readErrorKind(body: unknown): AnalyzeFailureKind {
