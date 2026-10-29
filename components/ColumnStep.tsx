@@ -29,7 +29,8 @@ export default function ColumnStep({ survey, onBack, onStart }: ColumnStepProps)
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-6">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <header className="flex items-center gap-6">
+        {/* [분석 시작]을 맨 위에 두고, 열이 많아 스크롤을 내려도 보이도록 위쪽에 붙여 둔다 (2026-10-29 운영자 요청) */}
+        <header className="sticky top-0 z-10 -mt-6 flex items-center gap-6 bg-cream pb-3 pt-6">
           <button
             type="button"
             onClick={onBack}
@@ -42,6 +43,14 @@ export default function ColumnStep({ survey, onBack, onStart }: ColumnStepProps)
             {table.sheetName && survey.tables.length === 1 && <>시트 {table.sheetName} · </>}
             응답 {table.rows.length}줄{survey.encoding && <> · 한글 인코딩 {survey.encoding}</>}
           </p>
+          <button
+            type="button"
+            disabled={!selected || selected.opinions.length === 0}
+            onClick={() => selected && onStart(selected.opinions, survey.fileName)}
+            className="shrink-0 rounded-full bg-title-green px-8 py-2 font-display text-2xl text-white shadow-md transition hover:bg-leaf-dark disabled:cursor-not-allowed disabled:bg-ink/20 disabled:shadow-none"
+          >
+            분석 시작 ▶
+          </button>
         </header>
 
         <h2 className="font-display text-heading text-acorn-line">분석할 의견이 들어 있는 열을 골라 주세요</h2>
@@ -115,22 +124,11 @@ export default function ColumnStep({ survey, onBack, onStart }: ColumnStepProps)
                 의견이 많아 {RULES.maxOpinionsPerRequest}건씩 나눠 분석한 뒤 주제를 합쳐요. 조금 더 오래 걸려요.
               </p>
             )}
+            {selected.opinions.length === 0 && (
+              <p className="text-lg text-heart">이 열에는 분석할 의견이 없어요. 다른 열을 골라 주세요.</p>
+            )}
           </section>
         )}
-
-        <div className="flex items-center justify-end gap-4">
-          {selected && selected.opinions.length === 0 && (
-            <p className="text-lg text-heart">이 열에는 분석할 의견이 없어요. 다른 열을 골라 주세요.</p>
-          )}
-          <button
-            type="button"
-            disabled={!selected || selected.opinions.length === 0}
-            onClick={() => selected && onStart(selected.opinions, survey.fileName)}
-            className="rounded-full bg-title-green px-8 py-3 font-display text-2xl text-white shadow-md transition hover:bg-leaf-dark disabled:cursor-not-allowed disabled:bg-ink/20 disabled:shadow-none"
-          >
-            분석 시작 ▶
-          </button>
-        </div>
       </div>
     </div>
   );
