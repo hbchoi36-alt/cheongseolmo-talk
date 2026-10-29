@@ -4,6 +4,7 @@
 import { errorResponse } from "@/lib/server/apiError";
 import { ANALYZE_INSTRUCTIONS, ANALYZE_SCHEMA, ANALYZE_SCHEMA_NAME, buildAnalyzeInput } from "@/lib/server/analyzePrompt";
 import { AiCallError, askStructured } from "@/lib/server/openai";
+import { AI_RESPONSE_LIMITS } from "@/lib/topicPresets";
 import { RULES, aiAnalysisSchema, analyzeRequestSchema } from "@/lib/types";
 import { validateAiAnalysis } from "@/lib/validate";
 
@@ -57,7 +58,8 @@ export async function POST(request: Request) {
   if (!analysis.success) {
     return errorResponse("AI_RULE_VIOLATION", "AI 결과가 정해진 형식과 달라요.");
   }
-  const validation = validateAiAnalysis(analysis.data, opinions);
+  // 이 시점에는 '기타' 합치기 전이라 분야 7개 + '기타' = 8개까지 허용하고, 정해 둔 이름만 쓸 수 있다 (4.4절)
+  const validation = validateAiAnalysis(analysis.data, opinions, AI_RESPONSE_LIMITS);
   if (!validation.ok) {
     // 어떤 규칙을 어겼는지만 남긴다 (의견 원문·번호는 남기지 않음)
     console.error("[analyze] AI 결과 규칙 위반:", [...new Set(validation.violations.map((v) => v.rule))].join(", "));

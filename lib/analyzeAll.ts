@@ -2,6 +2,7 @@
 // 300건 이하면 분석 요청 1번, 넘으면 300건씩 나눠 묶음마다 따로 분석(동시에 최대 3개)한 뒤 주제를 합친다.
 // 묶음 하나가 실패하면 그 묶음만 자동 재요청하고(analyzeClient), 그래도 실패하면 전체를 멈추고 실패로 알린다.
 import { AnalyzeError, analyzeOpinions, mergeTopics } from "./analyzeClient";
+import { collapseToLimit } from "./collapse";
 import { applyMerge, buildMergePlan, splitIntoBatches } from "./merge";
 import { RULES, type AiAnalysis, type OpinionInput } from "./types";
 import { validateAiAnalysis } from "./validate";
@@ -79,8 +80,8 @@ export async function analyzeAll(opinions: readonly OpinionInput[], options: Ana
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, batches.length) }, worker));
 
-  // 묶음이 하나면 합칠 것이 없다
-  if (batches.length === 1) return analyses[0];
+  // 묶음이 하나면 주제를 합칠 필요가 없다 (도토리 7개로 줄이는 일만 남는다)
+  if (batches.length === 1) return finish(analyses[0], opinions);
 
   const batchResults = batches.map((batchOpinions, i) => ({ opinions: batchOpinions, analysis: analyses[i] }));
   const plan = buildMergePlan(batchResults);
@@ -97,11 +98,17 @@ export async function analyzeAll(opinions: readonly OpinionInput[], options: Ana
       emit();
     },
   });
-  const analysis = applyMerge(merged, plan, batchResults);
+  return finish(applyMerge(merged, plan, batchResults), opinions);
+}
 
-  // 합친 결과를 전체 의견 기준으로 다시 검사한다 (DESIGN 4.3-4)
-  if (!validateAiAnalysis(analysis, opinions).ok) {
+/**
+ * 마무리: 의견이 있는 분야가 8개면 가장 적은 분야를 '기타'에 합쳐 도토리를 7개로 줄이고(DESIGN 4.4),
+ * 전체 의견 기준으로 규칙을 다시 검사한다 (DESIGN 4.3-4).
+ */
+function finish(analysis: AiAnalysis, opinions: readonly OpinionInput[]): AiAnalysis {
+  const { analysis: collapsed } = collapseToLimit(analysis);
+  if (!validateAiAnalysis(collapsed, opinions).ok) {
     throw new AnalyzeError("AI_RULE_VIOLATION", "합친 결과가 규칙에 맞지 않아요.");
   }
-  return analysis;
+  return collapsed;
 }

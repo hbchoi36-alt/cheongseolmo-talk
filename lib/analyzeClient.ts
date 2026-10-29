@@ -10,6 +10,7 @@ import {
   type MergeResponse,
   type OpinionInput,
 } from "./types";
+import { AI_RESPONSE_LIMITS, MAX_CANDIDATE_TOPICS } from "./topicPresets";
 import { validateAiAnalysis, validateMerge } from "./validate";
 
 /** 실패 원인 — 서버가 준 코드이거나, 서버 응답을 받지 못한 경우(NETWORK: 120초 초과·연결 끊김·형식이 아닌 응답) */
@@ -47,8 +48,9 @@ export function analyzeOpinions(opinions: readonly OpinionInput[], options: Anal
     { opinions },
     (body) => {
       // 서버가 이미 검증했지만 AI 결과를 그대로 믿지 않는다는 원칙대로 브라우저에서도 한 번 더 확인한다
+      // '기타' 합치기 전의 AI 응답이라 분야 7개 + '기타' = 8개까지 허용하고, 정해 둔 이름만 쓸 수 있다 (DESIGN 4.4)
       const analysis = aiAnalysisSchema.safeParse(body);
-      return analysis.success && validateAiAnalysis(analysis.data, opinions).ok ? analysis.data : null;
+      return analysis.success && validateAiAnalysis(analysis.data, opinions, AI_RESPONSE_LIMITS).ok ? analysis.data : null;
     },
     options,
   );
@@ -56,13 +58,14 @@ export function analyzeOpinions(opinions: readonly OpinionInput[], options: Anal
 
 /** 묶음별 주제를 7개 이내로 합친다. 원래 주제가 정확히 한 번씩 쓰였는지까지 확인하고, 아니면 재요청한다. */
 export function mergeTopics(request: MergeRequest, options: AnalyzeOptions = {}): Promise<MergeResponse> {
-  const inputIds = request.topics.map((topic) => topic.id);
   return postWithRetry(
     options.endpoint ?? "/api/merge",
     request,
     (body) => {
       const merged = mergeResponseSchema.safeParse(body);
-      return merged.success && validateMerge(merged.data, inputIds).length === 0 ? merged.data : null;
+      return merged.success && validateMerge(merged.data, request.topics, { maxTopics: MAX_CANDIDATE_TOPICS }).length === 0
+        ? merged.data
+        : null;
     },
     options,
   );

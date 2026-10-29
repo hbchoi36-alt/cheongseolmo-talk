@@ -21,7 +21,10 @@ export type RuleCode =
   | "MERGE_UNKNOWN_SOURCE" // 보내지 않은 임시 주제 번호를 합쳤다고 함
   | "MERGE_SOURCE_REUSED" // 같은 임시 주제를 두 번 이상 씀 (건수 부풀림)
   | "MERGE_SOURCE_MISSING" // 어디에도 합쳐지지 않은 임시 주제가 있음 (의견 누락)
-  | "MERGE_EMPTY_SOURCES"; // 아무것도 합치지 않은 주제
+  | "MERGE_EMPTY_SOURCES" // 아무것도 합치지 않은 주제
+  // 미리 정한 분야 검사 (DESIGN.md §4.4)
+  | "TOPIC_NOT_ALLOWED" // 미리 정한 분야(와 '기타')에 없는 이름의 주제
+  | "MERGE_NAME_MISMATCH"; // 합친 주제의 이름이 합친 임시 주제들의 이름과 다름
 
 export interface RuleViolation {
   rule: RuleCode;
@@ -40,17 +43,29 @@ export function charLength(text: string): number {
   return [...text].length;
 }
 
+/**
+ * 최대 주제 수를 정하는 옵션. 기본은 도토리 한도(7개)이고, AI 응답을 검사할 때는 '기타' 합치기 전이라
+ * 미리 정한 분야 7개 + '기타' = 8개까지 허용한다 (DESIGN.md §4.4).
+ */
+export interface TopicLimits {
+  maxTopics?: number;
+}
+
 /** 주제 목록이 PRD 규칙을 지키는지, 모든 의견이 빠짐없이 들어갔는지 검사한다. */
-export function validateTopics(topics: readonly Topic[], allOpinionIds: readonly number[]): RuleViolation[] {
+export function validateTopics(
+  topics: readonly Topic[],
+  allOpinionIds: readonly number[],
+  { maxTopics = RULES.maxTopics }: TopicLimits = {},
+): RuleViolation[] {
   const violations: RuleViolation[] = [];
   const known = new Set(allOpinionIds);
   const covered = new Set<number>();
   const seenNames = new Set<string>();
 
-  if (topics.length > RULES.maxTopics) {
+  if (topics.length > maxTopics) {
     violations.push({
       rule: "TOO_MANY_TOPICS",
-      message: `주제가 ${topics.length}개예요. '${RULES.otherTopicName}' 포함 최대 ${RULES.maxTopics}개까지만 만들 수 있어요.`,
+      message: `주제가 ${topics.length}개예요. '${RULES.otherTopicName}' 포함 최대 ${maxTopics}개까지만 만들 수 있어요.`,
     });
   }
 
@@ -141,10 +156,33 @@ function toResult(violations: RuleViolation[]): ValidationResult {
   return { ok: violations.length === 0, violations };
 }
 
+export interface AnalysisLimits extends TopicLimits {
+  /** 주제 이름으로 쓸 수 있는 이름 — 정해 주면 그 밖의 이름은 위반이다 (미리 정한 분야 + '기타') */
+  allowedTopicNames?: readonly string[];
+}
+
 /** ⑤ 서버: AI 응답을 보낸 의견 목록과 비교해 검사한다. */
-export function validateAiAnalysis(analysis: AiAnalysis, inputs: readonly OpinionInput[]): ValidationResult {
+export function validateAiAnalysis(
+  analysis: AiAnalysis,
+  inputs: readonly OpinionInput[],
+  { allowedTopicNames, ...limits }: AnalysisLimits = {},
+): ValidationResult {
   const ids = inputs.map((opinion) => opinion.id);
-  const violations = validateTopics(analysis.topics, ids);
+  const violations = validateTopics(analysis.topics, ids, limits);
+
+  if (allowedTopicNames) {
+    const allowed = new Set(allowedTopicNames);
+    for (const topic of analysis.topics) {
+      const name = topic.name.trim();
+      if (!allowed.has(name)) {
+        violations.push({
+          rule: "TOPIC_NOT_ALLOWED",
+          topicName: name,
+          message: `'${name}'은 미리 정한 분야에 없는 이름이에요.`,
+        });
+      }
+    }
+  }
 
   const known = new Set(ids);
   const unknownFlags = analysis.flags.map((flag) => flag.id).filter((id) => !known.has(id));
@@ -162,17 +200,25 @@ export function validateAiAnalysis(analysis: AiAnalysis, inputs: readonly Opinio
 /**
  * 주제 병합 결과 검사: 합친 주제가 규칙(7개 이내, 이름·요약·질문)을 지키고,
  * 보낸 임시 주제가 정확히 한 번씩만 쓰였는지 확인한다 (한 번이라도 빠지면 그 주제의 의견이 통째로 누락된다).
+ * 주제 이름은 미리 정한 분야라서, 합친 주제의 이름은 합친 임시 주제들의 이름과 같아야 한다
+ * (이름이 같은 임시 주제는 반드시 한 주제로 합쳐지고, 다른 이름끼리는 합쳐지지 않는다).
  */
-export function validateMerge(merged: MergeResponse, inputTopicIds: readonly string[]): RuleViolation[] {
+export function validateMerge(
+  merged: MergeResponse,
+  inputTopics: readonly { id: string; name: string }[],
+  { maxTopics = RULES.maxTopics }: TopicLimits = {},
+): RuleViolation[] {
   const violations: RuleViolation[] = [];
+  const inputTopicIds = inputTopics.map((topic) => topic.id);
+  const nameById = new Map(inputTopics.map((topic) => [topic.id, topic.name.trim()]));
   const known = new Set(inputTopicIds);
   const used = new Set<string>();
   const seenNames = new Set<string>();
 
-  if (merged.topics.length > RULES.maxTopics) {
+  if (merged.topics.length > maxTopics) {
     violations.push({
       rule: "TOO_MANY_TOPICS",
-      message: `합친 주제가 ${merged.topics.length}개예요. '${RULES.otherTopicName}' 포함 최대 ${RULES.maxTopics}개까지만 만들 수 있어요.`,
+      message: `합친 주제가 ${merged.topics.length}개예요. '${RULES.otherTopicName}' 포함 최대 ${maxTopics}개까지만 만들 수 있어요.`,
     });
   }
 
@@ -218,6 +264,12 @@ export function validateMerge(merged: MergeResponse, inputTopicIds: readonly str
         violations.push({ rule: "MERGE_UNKNOWN_SOURCE", topicName: name, message: `'${name}' 주제가 없는 임시 주제(${id})를 합쳤다고 해요.` });
       } else if (used.has(id)) {
         violations.push({ rule: "MERGE_SOURCE_REUSED", topicName: name, message: `임시 주제 ${id}가 두 번 이상 쓰였어요.` });
+      } else if (nameById.get(id) !== name) {
+        violations.push({
+          rule: "MERGE_NAME_MISMATCH",
+          topicName: name,
+          message: `'${name}' 주제가 이름이 다른 임시 주제(${id}: '${nameById.get(id)}')를 합쳤다고 해요.`,
+        });
       }
       used.add(id);
     }

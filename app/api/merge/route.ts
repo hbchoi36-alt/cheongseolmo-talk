@@ -4,6 +4,7 @@
 import { errorResponse } from "@/lib/server/apiError";
 import { MERGE_INSTRUCTIONS, MERGE_SCHEMA, MERGE_SCHEMA_NAME, buildMergeInput } from "@/lib/server/mergePrompt";
 import { AiCallError, askStructured } from "@/lib/server/openai";
+import { MAX_CANDIDATE_TOPICS } from "@/lib/topicPresets";
 import { RULES, mergeRequestSchema, mergeResponseSchema } from "@/lib/types";
 import { validateMerge } from "@/lib/validate";
 
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
   const merged = mergeResponseSchema.safeParse(data);
   if (!merged.success) return errorResponse("AI_RULE_VIOLATION", "AI 결과가 정해진 형식과 달라요.");
 
-  const violations = validateMerge(merged.data, inputIds);
+  const violations = validateMerge(merged.data, topics, { maxTopics: MAX_CANDIDATE_TOPICS });
   if (violations.length > 0) {
     // 어떤 규칙을 어겼는지만 남긴다 (주제 내용은 남기지 않음)
     console.error("[merge] AI 결과 규칙 위반:", [...new Set(violations.map((v) => v.rule))].join(", "));
