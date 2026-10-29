@@ -4,12 +4,15 @@ import "server-only";
 // 주제는 미리 정한 분야(lib/topicPresets.ts)로 고정하고 AI는 분류·요약·질문만 한다.
 // 규칙 수치는 검증 함수와 같은 RULES를 써서, 지시문과 검사가 어긋나지 않게 한다.
 // AI 출력을 그대로 믿지 않고, 받은 뒤 lib/validate.ts가 같은 규칙을 다시 검사한다.
-import { TOPIC_NAMES, TOPIC_PRESETS } from "@/lib/topicPresets";
+import { OTHER_TOPIC_HINT, TOPIC_NAMES, TOPIC_PRESETS } from "@/lib/topicPresets";
 import { RULES, type OpinionInput } from "@/lib/types";
 
 export const ANALYZE_SCHEMA_NAME = "opinion_analysis";
 
-const presetList = TOPIC_PRESETS.map((preset) => `   - ${preset.name}: 설문에서 고른 분야 "${preset.description}"`).join("\n");
+// 범위가 넓은 분야에는 경계 설명(boundary)을 붙여, 다른 분야 의견이 부풀어 붙는 것을 막는다
+const presetList = TOPIC_PRESETS.map(
+  (preset) => `   - ${preset.name}: 설문에서 고른 분야 "${preset.description}"${preset.boundary ? ` — ${preset.boundary}` : ""}`,
+).join("\n");
 
 export const ANALYZE_INSTRUCTIONS = `당신은 간담회 사전 설문에 모인 직원 의견을 분야별로 분류·요약하고 토론 질문을 만드는 도우미입니다.
 입력은 JSON 배열이며 각 항목은 {"id": 의견 번호, "text": 의견 원문}입니다. 모든 답은 한국어로 씁니다.
@@ -20,10 +23,10 @@ export const ANALYZE_INSTRUCTIONS = `당신은 간담회 사전 설문에 모인
 [분류 규칙]
 1. 분류 기준(분야)은 설문의 객관식 문항과 같게 미리 정해져 있습니다. 주제 이름(name)은 아래 이름 중 하나를 글자 그대로 쓰세요. 새 이름을 만들거나, 분야를 합치거나 나누지 마세요.
 ${presetList}
-   - ${RULES.otherTopicName}: 위 분야 어디에도 맞지 않는 의견만 넣습니다.
-2. 각 의견은 내용상 가장 알맞은 분야에 넣습니다. 알맞은 분야가 있으면 '${RULES.otherTopicName}'에 넣지 마세요.
+   - ${RULES.otherTopicName}: 위 분야 어디에도 맞지 않는 의견만 넣습니다. ${OTHER_TOPIC_HINT} 의견은 해당하는 분야가 따로 없으니 위 분야에 넣지 말고 반드시 '${RULES.otherTopicName}'에 넣으세요.
+2. 각 의견은 내용상 가장 알맞은 분야에 넣습니다. 알맞은 분야가 있으면 '${RULES.otherTopicName}'에 넣지 마세요(교육·연수는 예외).
 3. 모든 의견 번호는 적어도 한 주제에 들어가야 합니다. 하나도 빠뜨리지 마세요(누락 0건).
-4. 한 의견에 여러 분야가 섞여 있으면 해당하는 분야마다 모두 넣습니다. 단, 한 주제 안에 같은 번호를 두 번 쓰지 마세요.
+4. 의견의 핵심 내용에 해당하는 분야에 넣습니다. 한 의견이 정말 두 분야를 함께 중요하게 다룰 때만 두 분야 모두 넣고(보통 1개, 많아도 2개), 지나가듯 언급한 내용 때문에 분야를 더하지 마세요. 단, 한 주제 안에 같은 번호를 두 번 쓰지 마세요.
 5. 의견이 한 건도 없는 분야는 topics에 넣지 마세요(의견이 0건인 주제는 만들 수 없습니다). 같은 이름의 주제를 두 번 쓰지 마세요.
 6. 입력에 없는 번호는 쓰지 않습니다.
 
