@@ -185,7 +185,7 @@ function Running({ count, progress }: { count: number; progress: AnalysisProgres
               묶음 {progress.doneBatches} / {progress.totalBatches} 완료
             </p>
           ))}
-        {progress?.retrying && <p className="text-base text-title-orange">조금 늦어져서 한 번 더 시도하고 있어요</p>}
+        {progress?.retrying && <p className="text-base text-orange-text">조금 늦어져서 한 번 더 시도하고 있어요</p>}
       </div>
     </>
   );

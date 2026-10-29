@@ -28,12 +28,12 @@ function breakableName(name: string) {
 export default function Acorn({ name, count, width, selected, onSelect }: AcornProps) {
   const labelRef = useRef<HTMLSpanElement>(null);
 
-  // 글자는 도토리 너비의 12%로 시작해, 이름과 건수가 몸통(크림색) 안에 다 들어갈 때까지 줄인다.
-  // 화면이 작아 도토리가 작아져도 모자(갈색)를 침범하거나 잘리지 않게 하기 위해서다.
+  // 글자는 도토리 너비의 17%(최대 34px)로 시작해, 이름과 건수가 몸통(크림색) 안에 다 들어갈 때까지 줄인다.
+  // 회의실에서 멀리서도 읽히도록 크게 시작하고(작업 22), 화면이 작아 도토리가 작아져도 모자(갈색)를 침범하거나 잘리지 않게 한다.
   useLayoutEffect(() => {
     const label = labelRef.current;
     if (!label) return;
-    let size = Math.min(30, width * 0.12);
+    let size = Math.min(34, width * 0.17);
     label.style.fontSize = `${size}px`;
     while (size > 8 && (label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1)) {
       size -= 0.5;
@@ -81,7 +81,7 @@ export default function Acorn({ name, count, width, selected, onSelect }: AcornP
         style={{ wordBreak: "keep-all" }}
       >
         <span>{breakableName(name)}</span>
-        <span className="mt-0.5 text-[0.8em] text-acorn-cap">
+        <span className="mt-0.5 text-[0.85em] text-acorn-line">
           {count}건
         </span>
       </span>

@@ -20,8 +20,11 @@
   --color-ring-gold: #d9a441;
 
   /* 글자 */
-  --color-title-green: #3f8a2f;
-  --color-title-orange: #d9822b;
+  /* 회의실 스크린에서 읽히도록 크림·흰 바탕 위 대비를 맞춘 값 (작업 22): 초록은 흰 글자 위 4.9:1, 주황은 큰 글자용 3.6:1 */
+  --color-title-green: #38802a;
+  --color-title-orange: #c26a12;
+  /* 작은 글자(건수 등)에 쓰는 진한 주황 — 크림 바탕 위 4.8:1 */
+  --color-orange-text: #a8570f;
   --color-ink: #4a3020;
   --color-heart: #e85a5a;
 

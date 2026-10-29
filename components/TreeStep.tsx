@@ -121,7 +121,7 @@ export default function TreeStep({ result, onTopicChange, onDownloaded, onGoHome
                 >
                   <span className="font-display text-acorn-cap">{rank + 1}</span>
                   <span className="flex-1 font-display text-ink" style={{ fontSize: SIDE_ITEM }}>{topic.name}</span>
-                  <span className="text-title-orange">{topic.opinionIds.length}건</span>
+                  <span className="text-orange-text">{topic.opinionIds.length}건</span>
                 </button>
               </li>
             );
