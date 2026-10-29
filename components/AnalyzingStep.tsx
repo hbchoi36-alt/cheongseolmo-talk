@@ -26,12 +26,16 @@ const FAILURES: Record<AnalyzeFailureKind, { message: string; actions: FailureAc
 
 const ACTION_LABEL: Record<FailureAction, string> = { retry: "다시 시도", column: "열 다시 고르기", home: "처음으로" };
 
-type View = { status: "running"; progress: AnalysisProgress | null } | { status: "failed"; kind: AnalyzeFailureKind };
+type View =
+  | { status: "running"; progress: AnalysisProgress | null }
+  | { status: "failed"; kind: AnalyzeFailureKind }
+  // 분석이 끝나 완료 팝업을 띄운 상태 — 운영자가 버튼을 눌러야 생각나무로 넘어간다
+  | { status: "done"; result: ResultFile };
 
 interface AnalyzingStepProps {
   /** [분석 시작]으로 넘어온 의견과 원본 파일 이름. 없으면(개발용 단계 이동) 안내만 보여 준다. */
   pending: { opinions: OpinionInput[]; sourceFileName: string } | null;
-  /** 분석과 조립이 끝난 화면용 결과 — App이 받아 생각나무로 넘어간다 */
+  /** 완료 팝업에서 [생각나무 보기]를 누르면 화면용 결과를 넘긴다 — App이 받아 생각나무로 넘어간다 */
   onDone: (result: ResultFile) => void;
   onChooseColumn: () => void;
   onGoHome: () => void;
@@ -49,10 +53,6 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
   const [attempt, setAttempt] = useState(0);
 
   const jobRef = useRef<Job | null>(null);
-  const onDoneRef = useRef(onDone);
-  useEffect(() => {
-    onDoneRef.current = onDone;
-  }, [onDone]);
 
   useEffect(() => {
     if (!pending) return;
@@ -91,7 +91,8 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
           setView({ status: "failed", kind: "AI_RULE_VIOLATION" });
           return;
         }
-        onDoneRef.current(assembled.result);
+        // 곧바로 넘어가지 않고 완료 팝업을 먼저 보여 준다 (운영자가 결과를 확인하고 넘어가도록)
+        setView({ status: "done", result: assembled.result });
       } catch (error) {
         if (controller.signal.aborted) return;
         setView({ status: "failed", kind: error instanceof AnalyzeError ? error.kind : "NETWORK" });
@@ -115,7 +116,7 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
   const handlers: Record<FailureAction, () => void> = { retry, column: onChooseColumn, home: onGoHome };
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col">
       <header className="px-8 pt-6">
         <button
           type="button"
@@ -127,12 +128,42 @@ export default function AnalyzingStep({ pending, onDone, onChooseColumn, onGoHom
       </header>
 
       <section className="flex flex-1 flex-col items-center justify-center gap-5 px-8 pb-16 text-center">
-        {view.status === "running" ? (
-          <Running count={pending.opinions.length} progress={view.progress} />
-        ) : (
+        {view.status === "failed" ? (
           <Failed kind={view.kind} handlers={handlers} />
+        ) : (
+          // 완료 팝업이 뜨면 이 화면은 어두운 막 뒤로 가려진다 (묶음 진행 문구는 빼고 기본 안내만 남김)
+          <Running count={pending.opinions.length} progress={view.status === "running" ? view.progress : null} />
         )}
       </section>
+
+      {view.status === "done" && <DonePopup result={view.result} onConfirm={() => onDone(view.result)} />}
+    </div>
+  );
+}
+
+/** 분석이 끝났다는 팝업 — 결과를 한눈에 알려 주고, 운영자가 버튼을 눌러야 생각나무로 넘어간다 */
+function DonePopup({ result, onConfirm }: { result: ResultFile; onConfirm: () => void }) {
+  const softenedCount = result.opinions.filter((opinion) => opinion.softened).length;
+
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="analysis-done-title" className="absolute inset-0 z-30 flex items-center justify-center bg-ink/40 p-6">
+      <div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl border-4 border-acorn-cap/40 bg-cream px-10 py-8 text-center shadow-2xl">
+        <p aria-hidden="true" className="text-6xl">🌰</p>
+        <h2 id="analysis-done-title" className="font-display text-heading text-title-green">분석이 끝났어요!</h2>
+        <p className="text-xl text-ink/80">
+          의견 <strong className="text-acorn-line">{result.opinions.length}건</strong>을{" "}
+          <strong className="text-acorn-line">{result.topics.length}개 주제</strong>로 정리했어요.
+        </p>
+        {softenedCount > 0 && <p className="text-base text-ink/60">거친 표현이 있던 의견 {softenedCount}건은 순화해서 보여 줘요.</p>}
+        <button
+          type="button"
+          onClick={onConfirm}
+          autoFocus
+          className="mt-2 rounded-full bg-title-green px-10 py-2.5 font-display text-2xl text-white hover:opacity-90"
+        >
+          생각나무 보기 ▶
+        </button>
+      </div>
     </div>
   );
 }
