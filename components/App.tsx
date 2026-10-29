@@ -146,7 +146,6 @@ export default function App() {
             key={previewTopicCount ?? "all"}
             result={shownResult}
             onTopicChange={changeTopic}
-            hasUnsavedChanges={hasUnsavedChanges}
             onDownloaded={() => setHasUnsavedChanges(false)}
             onGoHome={goHome}
           />}

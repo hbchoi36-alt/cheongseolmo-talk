@@ -25,14 +25,12 @@ interface TreeStepProps {
   result: ResultFile | null;
   /** 운영자가 상세 화면에서 고친 주제를 결과에 반영한다 */
   onTopicChange: (topicIndex: number, topic: Topic) => void;
-  /** 결과를 아직 파일로 내려받지 않았는지 */
-  hasUnsavedChanges: boolean;
   onDownloaded: () => void;
   /** [처음으로] — 내려받지 않은 결과가 있으면 App이 확인 창을 띄운다 */
   onGoHome: () => void;
 }
 
-export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onDownloaded, onGoHome }: TreeStepProps) {
+export default function TreeStep({ result, onTopicChange, onDownloaded, onGoHome }: TreeStepProps) {
   // 이름을 고쳐도 같은 주제가 열린 채로 남도록 이름 대신 순서 번호로 기억한다
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // 생각나무를 처음 열면 청설모 마을 지도부터 보여 준다 (간담회 시작 전 아이스브레이킹)
@@ -68,7 +66,7 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
         >
           📋 사후 설문
         </button>
-        <DownloadResultButton result={result} hasUnsavedChanges={hasUnsavedChanges} onDownloaded={onDownloaded} />
+        <DownloadResultButton result={result} onDownloaded={onDownloaded} />
         <button
           type="button"
           onClick={onGoHome}

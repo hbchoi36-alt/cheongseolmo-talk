@@ -7,15 +7,7 @@ import { MAX_RESULT_FILE_BYTES, readResultFile, resultFileName, serializeResultF
 import type { ResultFile } from "@/lib/types";
 import { validateResultFile } from "@/lib/validate";
 
-export function DownloadResultButton({
-  result,
-  hasUnsavedChanges,
-  onDownloaded,
-}: {
-  result: ResultFile;
-  hasUnsavedChanges: boolean;
-  onDownloaded: () => void;
-}) {
+export function DownloadResultButton({ result, onDownloaded }: { result: ResultFile; onDownloaded: () => void }) {
   const [error, setError] = useState<string | null>(null);
 
   function download() {
@@ -44,7 +36,6 @@ export function DownloadResultButton({
       >
         ⬇ 결과 파일 내려받기
       </button>
-      {hasUnsavedChanges && <span className="text-sm text-heart">● 아직 내려받지 않았어요</span>}
       {error && (
         <span role="alert" className="text-sm text-heart">
           {error}
