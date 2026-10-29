@@ -4,6 +4,11 @@
 
 공사 대표 청렴소통 프로그램 '청설모' 간담회를 운영할 때, 담당자가 직원 의견을 손으로 분류·요약해 PPT로 만들던 일을 줄이고 간담회 토론 참여를 높이려고 만들었습니다.
 
+## 접속 주소
+
+- 배포된 앱: https://cheongseolmo-talk.vercel.app
+- 저장소: https://github.com/hbchoi36-alt/cheongseolmo-talk
+
 ## 어떤 문제를 푸나요
 
 | | 현재(수작업) | 청설모 Talk |
