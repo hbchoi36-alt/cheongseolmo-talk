@@ -11,6 +11,7 @@ import AcornDetail from "./AcornDetail";
 import { DownloadResultButton } from "./ResultFileButtons";
 import SquirrelSticker from "./SquirrelSticker";
 import StepPlaceholder from "./StepPlaceholder";
+import SurveyThanks from "./SurveyThanks";
 import ThoughtTree from "./ThoughtTree";
 import VillageMap from "./VillageMap";
 
@@ -36,6 +37,9 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   // 생각나무를 처음 열면 청설모 마을 지도부터 보여 준다 (간담회 시작 전 아이스브레이킹)
   const [showMap, setShowMap] = useState(true);
+  // 간담회를 마치며 여는 사후 설문 화면. 구글폼 링크는 매번 달라서 화면에서 입력받고, 생각나무를 떠나면 잊는다
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [surveyUrl, setSurveyUrl] = useState<string | null>(null);
 
   if (!result) {
     return <StepPlaceholder title="④ 생각나무" plannedTask="결과를 불러온 뒤" />;
@@ -54,6 +58,13 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
           className="rounded-full border-2 border-acorn-line/30 bg-acorn-body px-5 py-1.5 text-base hover:bg-white"
         >
           🗺 마을 지도
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowSurvey(true)}
+          className="rounded-full border-2 border-acorn-line/30 bg-acorn-body px-5 py-1.5 text-base hover:bg-white"
+        >
+          📋 사후 설문
         </button>
         <DownloadResultButton result={result} hasUnsavedChanges={hasUnsavedChanges} onDownloaded={onDownloaded} />
         <button
@@ -123,6 +134,8 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
       </aside>
 
       {showMap && <VillageMap onClose={() => setShowMap(false)} />}
+
+      {showSurvey && <SurveyThanks url={surveyUrl} onUrlChange={setSurveyUrl} onClose={() => setShowSurvey(false)} />}
 
       {/* 도토리 상세 — 전체 화면 */}
       {open !== null && (
