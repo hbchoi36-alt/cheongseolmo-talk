@@ -1,5 +1,5 @@
 // Design Ref: DESIGN.md §4.1 ⑤·⑥ — AI 결과를 그대로 믿지 않고 앱 코드가 PRD 규칙 준수를 최종 확인한다.
-// 서버(Claude 응답 직후), 브라우저(화면용 결과 조립 후), 결과 파일 불러오기에서 같은 함수를 쓴다.
+// 서버(AI 응답 직후), 브라우저(화면용 결과 조립 후), 결과 파일 불러오기에서 같은 함수를 쓴다.
 // 위반 메시지는 로그에 남을 수 있으므로 의견 원문은 넣지 않고 번호와 주제 이름만 쓴다.
 import { RULES, type AiAnalysis, type OpinionInput, type ResultFile, type Topic } from "./types";
 
@@ -136,7 +136,7 @@ function toResult(violations: RuleViolation[]): ValidationResult {
   return { ok: violations.length === 0, violations };
 }
 
-/** ⑤ 서버: Claude 응답을 보낸 의견 목록과 비교해 검사한다. */
+/** ⑤ 서버: AI 응답을 보낸 의견 목록과 비교해 검사한다. */
 export function validateAiAnalysis(analysis: AiAnalysis, inputs: readonly OpinionInput[]): ValidationResult {
   const ids = inputs.map((opinion) => opinion.id);
   const violations = validateTopics(analysis.topics, ids);

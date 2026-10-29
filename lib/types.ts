@@ -30,7 +30,7 @@ export const analyzeRequestSchema = z.object({
   opinions: z.array(opinionInputSchema).min(1),
 });
 
-// ④ Claude가 돌려주는 분석 결과 — 원문은 들어 있지 않음
+// ④ AI가 돌려주는 분석 결과 — 원문은 들어 있지 않음
 
 export const topicSchema = z.object({
   name: z.string().min(1), // 주제 이름, 10자 이내 (예: "인사제도", "기타")
@@ -80,7 +80,7 @@ export type ResultFile = z.infer<typeof resultFileSchema>;
 export const API_ERROR_CODES = [
   "INVALID_INPUT", // 의견이 비었거나 형식이 틀림 (400)
   "AI_RULE_VIOLATION", // AI 결과가 검증 규칙에 맞지 않음 (502) — 재요청은 브라우저가 함
-  "AI_UNAVAILABLE", // Claude 응답 없음·시간 초과·요청 한도 (503)
+  "AI_UNAVAILABLE", // AI 응답 없음·시간 초과·요청 한도 (503)
   "SERVER_CONFIG", // API 키 미설정 (500)
 ] as const;
 

@@ -55,7 +55,7 @@
 
 ## 1. 프로젝트 한 줄 요약
 
-간담회 사전 설문(CSV/xlsx)을 올리면 Claude API가 의견을 주제별로 분류·요약하고 토론 질문을 만들어,
+간담회 사전 설문(CSV/xlsx)을 올리면 OpenAI API가 의견을 주제별로 분류·요약하고 토론 질문을 만들어,
 **생각나무 위의 도토리**(주제 1개 = 도토리 1개, 의견 수에 비례한 크기)로 회의실 스크린에 보여주는 웹앱.
 
 - 사용자: 간담회 운영자(직접 조작), 참석 직원(스크린을 함께 봄)
@@ -68,7 +68,7 @@
 | 프레임워크 | Next.js 16.4 (App Router, Turbopack) — 다른 프레임워크·별도 서버 도입 금지 |
 | UI | React 19.3, Tailwind CSS v4 (`@tailwindcss/turbopack`) |
 | 언어 | TypeScript (strict), 경로 별칭 `@/*` → 프로젝트 루트 |
-| AI | Claude API (Anthropic) — 과정 지정 서비스. 다른 LLM으로 바꾸지 않음 |
+| AI | OpenAI API — 강사님 상담으로 Claude에서 변경(2026-10-29), `.env`의 `OPENAI_API_KEY` 사용. 모델 이름은 `OPENAI_MODEL`로 바꿀 수 있게 하고, 호출은 `lib/server/openai.ts` 한 곳에만 둔다. 다른 LLM으로 또 바꾸려면 PRD부터 고친다 |
 | 배포 | Vercel (Part 5 예정) |
 
 `next.config.ts`에 `cacheComponents: true`, `partialPrefetching: true`가 켜져 있음.
@@ -138,7 +138,7 @@ npm run lint    # ESLint (next core-web-vitals + typescript)
 ## 7. 보안·개인정보 (반드시 지킬 것)
 
 - API 키는 `.env`에만 보관하고 **서버 측 코드(Route Handler)에서만** 사용. `NEXT_PUBLIC_` 접두사 금지.
-  Claude를 호출하는 모듈은 `import "server-only"`로 클라이언트 번들 유입을 막을 것.
+  OpenAI를 호출하는 모듈은 `import "server-only"`로 클라이언트 번들 유입을 막을 것.
 - `.env`는 `.gitignore`의 `.env*`로 제외되어 있음. 이 규칙을 없애거나 키 값을 코드·로그·커밋·응답 메시지에 남기지 않음.
 - 업로드된 의견은 분석 요청 처리에만 쓰고 서버에 저장·로깅하지 않음.
 - 이름·사번 등 개인정보는 수집하지 않음. 화면 표시 시 이름은 `●●` 처리.
@@ -148,7 +148,7 @@ npm run lint    # ESLint (next core-web-vitals + typescript)
 
 1. 예시 데이터(CSV·xlsx 각 1개, 의견 30건 — 빈칸·이름·욕설·복합 주제 포함)
 2. 파일 업로드 화면 → 3. 파일 읽기 → 4. 의견 열 선택
-5. Claude API 연결 → 6. AI 분석 요청 → 7. 결과 검사 → 8. 진행·실패 화면
+5. OpenAI API 연결 → 6. AI 분석 요청 → 7. 결과 검사 → 8. 진행·실패 화면
 9. 생각나무 그리기 → 10. 도토리 상세 보기
 11. 결과 내려받기 → 12. 결과 불러오기
 13. 스크린 표시 다듬기 → 14. 목표 확인(준비 시간 5분 이내, 누락 0건)
@@ -161,11 +161,12 @@ npm run lint    # ESLint (next core-web-vitals + typescript)
 - 사용자에게 보이는 UI 문구는 **한국어**, 존댓말의 부드러운 해요체 ("분석에 실패했어요").
 - 코드 식별자는 영어(camelCase / 컴포넌트는 PascalCase). 도메인 용어 매핑: 주제=`topic`, 의견=`opinion`, 도토리=`acorn`, 생각나무=`thoughtTree`, 토론 질문=`discussionQuestion`.
 - 주석은 한국어로, "왜"가 필요한 곳에만 짧게.
-- 새 패키지 추가 시 이유를 설명하고 최소한으로 (예: xlsx 파싱, 인코딩 감지, Anthropic SDK).
+- 새 패키지 추가 시 이유를 설명하고 최소한으로 (예: xlsx 파싱, 인코딩 감지, OpenAI SDK).
 
 ## 10. 확인 필요 사항 (초안 작성 시 발견)
 
-- [ ] `.env`에 `ANTHROPIC_API_KEY`가 없음 (현재 `OPENAI_API_KEY` 등만 있음). Claude 연결(개발 단위 5) 전에 운영자가 직접 추가해야 함.
+- [x] AI 서비스를 OpenAI로 변경함(2026-10-29): `.env`에 있는 `OPENAI_API_KEY`를 쓰므로 새 키를 추가할 필요가 없음.
+- [ ] OpenAI 연결과 사용할 모델 이름은 개발 단위 5에서 실제 호출로 확인해 확정함.
 - [x] `app/layout.tsx`를 `lang="ko"`, 서비스명 메타데이터로 변경함.
 - [x] `git init` 완료 (아직 커밋 없음). `.bkit/`(플러그인 로컬 상태)은 `.gitignore`에 추가함.
 - [x] 대량 의견 처리 방식 결정: 브라우저 파싱 + 의견 텍스트만 묶음 단위로 서버 전송 (5절 참고).
