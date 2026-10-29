@@ -51,7 +51,7 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
   return (
     <div className="relative flex min-h-0 flex-1 bg-[#f7f3e3]">
       {/* 운영자용 버튼 — 화면 구석에 작게 둔다 */}
-      <div className="absolute right-6 top-4 z-10 flex items-start gap-2">
+      <div className="absolute left-6 top-4 z-10">
         <button
           type="button"
           onClick={() => setShowMap(true)}
@@ -59,6 +59,8 @@ export default function TreeStep({ result, onTopicChange, hasUnsavedChanges, onD
         >
           🗺 마을 지도
         </button>
+      </div>
+      <div className="absolute right-6 top-4 z-10 flex items-start gap-2">
         <button
           type="button"
           onClick={() => setShowSurvey(true)}
